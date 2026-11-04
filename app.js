@@ -369,7 +369,7 @@ function restore(){ try{ const s = JSON.parse(localStorage.getItem("gqs-saved")|
 /* ---------- customer quotation PDF (print layout) ---------- */
 const COMPANY = {
   nameAr:"مؤسسة بدر عمر الخنبشي التجارية", addrAr:"جدة - شارع ابوبكر الصديق - الشرفية", crAr:"سجل تجاري 4030197794",
-  nameEn:"Badr O. Alkhanbashi Est. for Trading", addrEn:"Jeddah, Abu Bakr as Siddiq Street", crEn:"Branch 4030197794",
+  nameEn:"Badr O. Alkhanbashi Est. for Trading", addrEn:"Jeddah, Abu Bakr as Siddiq Street", crEn:"CR 4030197794",
   vat:"300234539600003", logo:"logo.png"
 };
 const EXTRA = { custNo:"custNo", custVat:"custVat", custCity:"custCity", notes:"notes", custPhone:"custPhone", docNo:"docNo", validity:"validity",custAddress:"custAddress",custCommReg:"custCommReg" };
@@ -417,7 +417,11 @@ function printHtml(){
       <td class="sub">${fmt(c.total)}</td><td class="nw">${fmt(c.vatAmt)}</td><td class="nw">${fmt(c.discAmt)}</td><td class="nw">${l.disc}%</td>
       <td class="nw">${fmt(c.taxable)}</td><td class="nw">${fmt(l.price)}</td><td class="nw">${l.qty}</td><td class="pic"><img class="pic" data-serial="${esc(l.serial)}" alt=""></td>
       <td class="desc">${esc(l.ar || l.en)}</td><td class="nw">${esc(l.serial)}</td><td class="nw">${i + 1}</td></tr>`; }).join("");
-  const W = ["10%","8.8%","9.8%","6%","9.8%","7.6%","5%","20%","12.8%","8.6%","3.8%"];   // widths, left to right: Subtotal, Tax, Discount, %, Taxable, Unit price, QTY, Picture, Description, Barcode, #
+  const W0 = ["10%","8.8%","9.8%","6%","9.8%","7.6%","5%","20%","12.8%","8.6%","3.8%"];   // widths, left to right: Subtotal, Tax, Discount, %, Taxable, Unit price, QTY, Picture, Description, Barcode, #  (any numbers: they are scaled to add up to 100%)
+  const W = W0.map(w => (parseFloat(w) * 100 / W0.reduce((s, x) => s + parseFloat(x), 0)).toFixed(3) + "%");
+  // The blue boxes (title + customer labels) start exactly where the Description column starts below them
+  const blueW = parseFloat(W[8]) + parseFloat(W[9]) + parseFloat(W[10]);
+  const remW = 100 - blueW, kk = remW / 79, sc = x => (x * kk).toFixed(3) + "%";
   const tot = [
     [t.gross, "Total (Excluding VAT)", "الإجمالي ( غير شامل ضريبة القيمة المضافة )"],
     [t.discount, "Discount", "مجموع الخصومات"],
@@ -432,7 +436,7 @@ function printHtml(){
   </tr></table>
  <table style="margin:2px 0; width:100%; text-align:center;">
   <tr>
-   <td style="width:38%; padding:0; vertical-align:bottom; text-align:center;">
+   <td style="width:${(remW*0.543).toFixed(3)}%; padding:0; vertical-align:bottom; text-align:center;">
 
    <table class="kv" style="width:100%; text-align:center; border-collapse: separate; border-radius: 6px; border-spacing: 0; box-shadow: none;">
     <tr>
@@ -455,27 +459,27 @@ function printHtml(){
   </table>
 </td>
 
-    <td class="c" style="width:32%; text-align:center; vertical-align:middle;">
+    <td class="c" style="width:${(remW*0.457).toFixed(3)}%; text-align:center; vertical-align:middle;">
       <img src="${COMPANY.logo}" alt=""
         style="display:block; margin:0 auto; width:auto; height:auto; max-width:96%; max-height:22mm">
     </td>
 
-    <td id= "quoteHeader" style="width:18.8%; padding:0; vertical-align:bottom; text-align:center;">
+    <td id= "quoteHeader" style="width:${blueW.toFixed(3)}%; padding:0; vertical-align:bottom; text-align:center;">
       <div class="title-ar" style="text-align:center; font-size:19px;">عرض سعر</div>
       <div class="title-en" style="text-align:center;font-size:18px;">Quotation</div>
     </td>
   </tr>
 </table>
   <table class="bx cu">
-    <tr><td class="vn" style="width:15%">${esc(q.custNo || "")}</td><td class="cl" style="width:12%">رقم العميل<br>Customer No</td>
-      <td class="v ar cn" colspan="3" style="width:52%">${esc(q.customer || "")}</td><td class="cla" dir="rtl" style="width:21%">اسم العميل <br>Customer Name</td></tr>
+    <tr><td class="vn" style="width:${sc(15)}">${esc(q.custNo || "")}</td><td class="cl" style="width:${sc(12)}">رقم العميل<br>Customer No</td>
+      <td class="v ar cn" colspan="3" style="width:${sc(52)}">${esc(q.customer || "")}</td><td class="cla" dir="rtl" style="width:${blueW.toFixed(3)}%">اسم العميل <br>Customer Name</td></tr>
     <tr><td class="v" style="font-size:9px">${esc(q.custCity || "")}</td><td class="cl">البلد - المدينة<br>Country - City</td>
-      <td class="v" style="width:17%">${esc(q.custVat || "")}</td><td class="cl" style="width:12%">الرقم الضريبي<br>VAT Number</td>
-      <td class="v" style="width:23%; font-weight: bold">${esc(q.custPhone || "")}</td><td class="cla" dir="rtl">رقم الجوال <br> Mobile No</td></tr>
+      <td class="v" style="width:${sc(17)}">${esc(q.custVat || "")}</td><td class="cl" style="width:${sc(12)}">الرقم الضريبي<br>VAT Number</td>
+      <td class="v" style="width:${sc(23)}; font-weight: bold">${esc(q.custPhone || "")}</td><td class="cla" dir="rtl">رقم الجوال <br> Mobile No</td></tr>
       <tr>
-      <td class="v" style="width:12%">${esc(q.custCommReg || "-")}</td><td class="cla" dir="rtl">السجل التجاري <br>CR</td>
+      <td class="v" style="width:${sc(12)}">${esc(q.custCommReg || "-")}</td><td class="cla" dir="rtl">السجل التجاري <br>CR</td>
       
-      <td class="v ar" colspan="3" style="width:52%">${esc(q.custAddress || "")}</td><td class="cla" dir="rtl" style="width:21%">العنوان<br>Address</td></tr>
+      <td class="v ar" colspan="3" style="width:${sc(52)}">${esc(q.custAddress || "")}</td><td class="cla" dir="rtl" style="width:${blueW.toFixed(3)}%">العنوان<br>Address</td></tr>
 
   </table>
   <div class="hgap"></div>`;
@@ -509,7 +513,7 @@ function printHtml(){
       </thead><tbody>${rows}</tbody></table>
   <div class="foot">
   <br>
-  <table class="tot cnt"><tr><td class="en" style="width:${W.slice(0,6).reduce((s,w)=>s+parseFloat(w),0).toFixed(1)}%; font-size:10px;" >Total Quantity</td><td class="v" style="width:${W[6]}">${state.lines.reduce((s, l) => s + (+l.qty || 0), 0)}</td><td class="ar">إجمالي الكمية</td></tr></table>
+  <table class="tot cnt"><tr><td class="en" style="width:${W.slice(0,6).reduce((s,w)=>s+parseFloat(w),0).toFixed(3)}%; font-size:10px;" >Total Quantity</td><td class="v" style="width:${W[6]}">${state.lines.reduce((s, l) => s + (+l.qty || 0), 0)}</td><td class="ar">إجمالي الكمية</td></tr></table>
   <table class="tot" style="margin-top:3mm">${tot}</table>
   <div class="words ar">${tafqeet(t.total)}</div>
   <table class="notes">
@@ -760,6 +764,12 @@ function applyCustomer(r){
 }
 if ($("custOut")) $("custOut").addEventListener("click", e => { const b = e.target.closest("[data-c]"); if (b && CUSTOMERS[+b.dataset.c]) applyCustomer(CUSTOMERS[+b.dataset.c]); });
 document.addEventListener("click", e => { const box = $("custOut"); if (box && !e.target.closest(".custWrap")) box.hidden = true; });
+/* Enter in the customer name box picks the top suggestion (the first one in the list). */
+$("cust").addEventListener("keydown", e => {
+  if (e.key !== "Enter") return;
+  const box = $("custOut"), first = box && !box.hidden && box.querySelector("[data-c]");
+  if (first && CUSTOMERS[+first.dataset.c]){ e.preventDefault(); applyCustomer(CUSTOMERS[+first.dataset.c]); }
+});
 
 /* Columns are found by their Arabic heading, in any order. Each field accepts the headings below (first found wins).
    The address is taken from "العنوان", or built from المنطقة - الحي - رقم المبنى الشارع when there is no such column. */
@@ -866,6 +876,14 @@ function updateSheetLink(){
 }
 /* Open the Google Sheet tab of the quotation that is open right now (saving it first if it has no tab yet). */
 async function openQuotationInSheet(){
+  if (!IS_MAIN){   // settings page: the open quotation lives on the main page, so use the one saved last
+    restore();
+    const ids = Object.keys(state.saved).sort((x, y) => ((state.saved[y].quote || {}).savedAt || 0) - ((state.saved[x].quote || {}).savedAt || 0));
+    const last = ids.length && state.saved[ids[0]];
+    if (last && validSheetUrl(last.tabUrl)) { window.open(last.tabUrl, "_blank", "noopener"); return; }
+    if (validSheetUrl(CONFIG.SHEET_URL)) { window.open(CONFIG.SHEET_URL, "_blank", "noopener"); return; }
+    return toast("افتح صفحة العروض وأضف صنفاً أولاً ليتم إنشاء ورقة العرض.\nOpen the quotations page and add an item first.");
+  }
   const q = state.quote, id = q && q.id;
   const hasTab = () => state.saved[id] && validSheetUrl(state.saved[id].tabUrl);
   if (hasTab()){ window.open(state.saved[id].tabUrl, "_blank", "noopener"); return; }

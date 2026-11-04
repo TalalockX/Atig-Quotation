@@ -1,23 +1,14 @@
 /* Layout: scan + sample labels on the left, live quotation on the right, sheet preview underneath. */
 :root{
-  color-scheme:light;
-  --bg:#242ee0; --surface:#ffffff; --surface-2:#e8eeeb; --line:#d3dcd8;
-  --fg:#15221f; --muted:#5b6b66;
-  --accent:#0a6b5c; --accent-fg:#ffffff; --accent-soft:#d5ece6;
-  --warn:#b45309; --warn-soft:#fdecd2; --bad:#b42318;
-  --font:"IBM Plex Sans","IBM Plex Sans Arabic",system-ui,sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,monospace;
-}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  /* ONE look for every browser: pale page, dark boxes (this was the "dark mode" look). Edit the colours here. */
+  color-scheme:dark;
   --bg:#f4faff; --surface:#171e22; --surface-2:#171e22; --line:#bdc0f0;
   --fg:#e6efec; --muted:#a89f94;
   --accent:#4a81f0; --accent-fg:#06211c; --accent-soft:#17352f;
-  --warn:#4a81f0; --warn-soft:#15123a; --bad:#ff8a7a; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#443c2d; --surface:#221d17; --surface-2:#2d281f; --line:#3d392c;
-  --fg:#e6efec; --muted:#a89f94;
-  --accent:#edbd0f; --accent-fg:#06211c; --accent-soft:#17352f;
-  --warn:#f0a94a; --warn-soft:#3a2a12; --bad:#ff8a7a; color-scheme:dark}
+  --warn:#4a81f0; --warn-soft:#15123a; --bad:#ff8a7a;
+  --font:"IBM Plex Sans","IBM Plex Sans Arabic",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
 [hidden]{display:none!important}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 var(--font);
@@ -310,17 +301,13 @@ a.linkbtn.wide{display:flex;justify-content:center;text-align:center}
 
 /* ---- readable text when the page background is light and the theme is "dark" ----
    --ink = text sitting directly on the page background (title, intro). Inputs get dark text on their light boxes. */
-:root{--ink:var(--fg)}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--ink:#3a4047}}
-:root[data-theme="dark"]{--ink:#3a4047}
+:root{--ink:#3a4047}
 h1,.top p,.top a{color:var(--ink)}
 .top p .en{color:var(--ink);opacity:.8}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]) input,:root:not([data-theme="light"]) select,:root:not([data-theme="light"]) textarea{color:#1f262c}
-  :root:not([data-theme="light"]) input::placeholder{color:#6b7480}
-  :root:not([data-theme="light"]) input:disabled{-webkit-text-fill-color:#1f262c}
-  :root:not([data-theme="light"]) .toast{color:#1f262c}
-}
+input,select,textarea{color:#1f262c}
+input::placeholder{color:#6b7480}
+input:disabled{-webkit-text-fill-color:#1f262c}
+.toast{color:#1f262c}
 
 /* PDF: Total Quantity / Total Items number cells are always white */
 #printSheet .tot.cnt td.v{background:#fff!important}
@@ -331,7 +318,7 @@ h1,.top p,.top a{color:var(--ink)}
 
 /* PDF: Issue Date / Doc No / VAT box - bold (2px) outer border with rounded corners, thin (1px) lines inside.
    Change "2px" for a thicker/thinner outer border, "6px" for rounder/squarer corners. */
-#printSheet .kv{border-collapse:separate;border-spacing:0;border:1px solid #000;border-radius:6px}
+#printSheet .kv{border-collapse:separate;border-spacing:0;border:2px solid #000;border-radius:6px}
 #printSheet .kv td{border:0;border-right:1px solid #000;border-bottom:1px solid #000}
 #printSheet .kv tr>:last-child{border-right:0}
 #printSheet .kv tr:last-child>td{border-bottom:0}
@@ -339,3 +326,23 @@ h1,.top p,.top a{color:var(--ink)}
 #printSheet .kv tr:first-child>:last-child{border-top-right-radius:4px}
 #printSheet .kv tr:last-child>:first-child{border-bottom-left-radius:4px}
 #printSheet .kv tr:last-child>:last-child{border-bottom-right-radius:4px}
+
+/* intro text right above the scan box: small, sits close to the box. Change font-size to resize it. */
+.scanintro{margin:0 0 -12px;font-size:11.5px;line-height:1.4;color:var(--ink);unicode-bidi:plaintext}
+.scanintro .en{color:var(--ink);opacity:.8}
+
+/* Page layout: the grid has two columns. Its four children fall in place by themselves, in this order:
+   row 1:  [logo + company name]   [Quotation title + scan text]
+   row 2:  [scan box column]       [quotation column]
+   No manual placement is needed, so nothing can end up in the wrong column. On a phone it becomes one column in the same order. */
+.grid>.brand{align-self:end}
+.grid>.introwrap{align-self:end;margin-bottom:-12px}
+.introwrap .scanintro{margin:0}
+.qtitle{text-align:right;margin:0 0 8px;color:var(--ink)}
+
+/* logo + title in the left column directly above the scan box */
+/* company English name smaller so it fits on one line (change font-size to resize) */
+.brandEn{font-size:16px;font-weight:600;white-space:nowrap}
+/* no up/down arrows on number boxes (qty, discount) */
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
