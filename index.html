@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ar">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Atig Quotation</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand"><img class="sitelogo" src="atig-logo.png" alt="Atig Toys"><h1>عروض أسعار اتيج <br> Atig Quotation</h1></div>
+    <p>امسح باركود أو QR الصنف (أو ابحث في قائمة الأصناف) لإضافته إلى العرض، ثم عدّل الكمية والخصم. <br><span class="en">Scan an item barcode / QR (or search the item list) to add it, then edit qty and discount.</span></p>
+  </div>
+
+  <div class="grid">
+    <div class="stack">
+      <section class="panel" aria-labelledby="h-scan">
+        <h2 id="h-scan">مسح الباركود / Scan</h2>
+        <form class="paste" id="pasteForm">
+          <input id="searchIn" type="search" aria-label="ابحث عن صنف أو أدخل الباركود / Search items or enter a serial" placeholder="امسح أو ابحث / Scan or search" autocomplete="off" spellcheck="false" autofocus>
+          <button class="additmbtn">إضافة <br> Add</button>
+        </form>
+        <div id="searchOut"></div>
+        <p class="hint">وجّه قارئ الباركود/QR إلى الملصق وسيُضاف الصنف تلقائياً، أو اكتب اسم الصنف أو رقمه واضغط على النتيجة، أو اضغط إضافة لإضافة أول نتيجة.<br><span class="en">Point the barcode / QR scanner at the label and the item is added automatically, or type an item name or serial, tap a result, or press Add for the first one.</span></p>
+      </section>
+      <section class="panel" aria-labelledby="h-saved" id="savedPanel" hidden>
+        <h2 id="h-saved">Saved quotations / العروض المحفوظة</h2>
+        <div class="saved" id="saved"></div>
+      </section>
+      <section class="panel" aria-labelledby="h-more">
+        <h2 id="h-more">الإعدادات / Settings</h2>
+        <a class="linkbtn wide" href="settings.html">ربط Google Sheet وتحديث البيانات / Connect Google Sheet &amp; Update data</a>
+      </section>
+
+
+    </div>
+
+    <div class="stack">
+      <section class="panel" aria-labelledby="h-quote">
+        <h2 id="h-quote">عرض السعر / Quotation</h2>
+        <div class="qhead">
+          <label class="f">رقم العرض / Quote No<input id="qid" readonly></label>
+          <div class="custWrap">
+            <label class="f">اسم العميل / Customer name<input id="cust" placeholder="اسم العميل / Customer name" autocomplete="off"></label>
+            <div class="custOut" id="custOut" hidden></div>
+          </div>
+          <label class="f">الفرع / Branch<select id="branch" aria-label="Branch"><option value="">اختر / Select</option><option>001</option><option>002</option><option>003</option><option>004</option><option>RU</option></select></label>
+          <label class="f">التاريخ / Date<input id="qdate" readonly></label>
+        </div>
+        <div class="qhead">
+          <label class="f">رقم العميل / Customer No<input id="custNo" placeholder="CU00000" autocomplete="off"></label>
+          <label class="f">الرقم الضريبي / VAT Number<input id="custVat" inputmode="numeric" autocomplete="off"></label>
+          <label class="f">رقم الجوال (اختياري) / Mobile No (optional)<input id="custPhone" type="tel" inputmode="tel" autocomplete="off"></label>
+          <label class="f">البلد - المدينة / Country - City<input id="custCity" placeholder="المملكة العربية السعودية - جدة" autocomplete="off"></label>
+        </div>
+        <div class="qhead" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+          <label class="f">عنوان العميل / Customer address<input id="custAddress" autocomplete="off"></label>
+          <label class="f">السجل التجاري / Commercial registration<input id="custCommReg" autocomplete="off"></label>
+        </div>
+        <div class="qhead">
+          <label class="f">رقم المستند / Doc no<input id="docNo" autocomplete="off"></label>
+          <label class="f">ملاحظات / Notes<input id="notes" autocomplete="off"></label>
+          <label class="f">مدة صلاحية العرض (أيام) / Validity (days)<input id="validity" inputmode="numeric" autocomplete="off"></label>
+        </div>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>الصنف / Item</th><th class="num">السعر / Price</th><th>الكمية / Qty</th><th class="num">الخصم % / Disc %</th><th class="num">المجموع / Total</th><th><span class="sr" style="position:absolute;left:-9999px">حذف / Remove</span></th></tr></thead>
+            <tbody id="lines"></tbody>
+          </table>
+          <div class="empty" id="empty">لا توجد أصناف بعد. امسح الباركود أو ابحث عن صنف لإضافته.<br><span class="en">No items yet. Scan a barcode or search for an item to add.</span></div>
+
+        </div>
+        <div class="totals" id="totals"></div>
+        <div class="opts">
+          <label><input type="checkbox" id="vatOn" checked> إضافة ضريبة القيمة المضافة 15% / Add VAT 15%</label>        </div>
+        <div class="actions">
+          <button class="primary" id="saveBtn" type="button">حفظ / Save</button>
+          <button class="primary" id="exportBtn" type="button">تصدير / Export</button>
+          <button class="primary" id="pdfBtn" type="button">PDF عربي</button>
+          <button class="wide" id="newBtn" type="button">عرض جديد / New quotation</button>
+          <button class="danger wide" id="delBtn" type="button">حذف العرض الحالي / Delete quotation</button>
+        </div>
+        <div class="confirm" id="delConfirm" role="alert" hidden>
+          <span id="delMsg"></span>
+          <button class="solid-danger" id="delYes" type="button">حذف / Delete</button>
+          <button id="delNo" type="button">إلغاء / Cancel</button>
+        </div>
+        <p class="hint" id="syncState" role="status"></p>
+        <p class="hint" id="quoteLinks" hidden><a id="lnkTab" target="_blank" rel="noopener" hidden>فتح ورقة هذا العرض / Open this quotation's tab</a></p>
+      </section>
+
+   
+      <section class="panel" aria-labelledby="h-sheet">
+        <div class="sheets">
+          
+          <div><h3>العروض (الفهرس) / Quotations (index)</h3><div class="tablewrap"><table id="tQuotes"></table></div></div>
+          <!-- <div><h3 id="tabTitle">ورقة هذا العرض / This quotation's tab</h3><div class="tabinfo" id="tabInfo"></div><div class="tablewrap"><table id="tLines"></table></div><div class="tabtotals" id="tTotals"></div></div>
+        </div>
+        <p class="hint">يحصل كل عرض على ورقة خاصة في الجدول باسم رقم المستند وفيها التفاصيل والأصناف والإجماليات، وورقة Quotations هي الفهرس. تتحدث هذه الجداول أثناء التعديل.<br><span class="en">Each quotation gets its own tab, named by its number. The Quotations tab is the index. These tables update as you edit.</span></p> -->
+      </section>
+
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<div id="printSheet" aria-hidden="true"></div>
+<script src="items.js"></script>
+<script src="qrtag.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

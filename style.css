@@ -1,0 +1,341 @@
+/* Layout: scan + sample labels on the left, live quotation on the right, sheet preview underneath. */
+:root{
+  color-scheme:light;
+  --bg:#242ee0; --surface:#ffffff; --surface-2:#e8eeeb; --line:#d3dcd8;
+  --fg:#15221f; --muted:#5b6b66;
+  --accent:#0a6b5c; --accent-fg:#ffffff; --accent-soft:#d5ece6;
+  --warn:#b45309; --warn-soft:#fdecd2; --bad:#b42318;
+  --font:"IBM Plex Sans","IBM Plex Sans Arabic",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#f4faff; --surface:#171e22; --surface-2:#171e22; --line:#bdc0f0;
+  --fg:#e6efec; --muted:#a89f94;
+  --accent:#4a81f0; --accent-fg:#06211c; --accent-soft:#17352f;
+  --warn:#4a81f0; --warn-soft:#15123a; --bad:#ff8a7a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#443c2d; --surface:#221d17; --surface-2:#2d281f; --line:#3d392c;
+  --fg:#e6efec; --muted:#a89f94;
+  --accent:#edbd0f; --accent-fg:#06211c; --accent-soft:#17352f;
+  --warn:#f0a94a; --warn-soft:#3a2a12; --bad:#ff8a7a; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 var(--font);
+  padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1350px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr);gap:20px}
+h1{font-size:22px;margin:0;font-weight:600;letter-spacing:-.01em;text-wrap:balance}
+h2{font-size:12px;margin:0 0 12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.top{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between}
+.top p{margin:0;color:var(--muted);font-size:13px}
+.top a{color:var(--accent)}
+.grid{display:grid;grid-template-columns:minmax(0,350px) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.stack{display:grid;gap:20px;min-width:0}
+button.additmbtn{padding: 6px 12px; font-size: 15px;}
+button,input{font:inherit;color:inherit}
+button{min-height:44px;padding:0 16px;border-radius:8px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-weight:500}
+button:hover{background:var(--surface-2)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+button.primary:hover{filter:brightness(1.08)}
+button.danger{color:var(--bad);border-color:var(--bad);background:transparent}
+button.solid-danger{background:var(--bad);border-color:var(--bad);color:var(--bg)}
+button:disabled{opacity:.45;cursor:not-allowed}
+:is(button,input,a):focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+select,input{min-height:44px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);width:100%}
+select{font:inherit;color:inherit}
+.linkbtn{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border:1px solid var(--accent);border-radius:8px;color:var(--accent);font-weight:500;text-decoration:none}
+.linkbtn:hover{background:var(--accent-soft)}
+input:disabled{background:transparent;border-color:transparent;opacity:1;-webkit-text-fill-color:var(--fg)}
+label.f{display:grid;gap:4px;font-size:12px;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:10px}
+.row>*{flex:1 1 140px}
+/* scanner */
+.viewfinder{position:relative;aspect-ratio:4/3;max-width:100%;background:#0b1211;border-radius:8px;overflow:hidden;display:grid;place-items:center;color:#9fb5af;font-size:13px;text-align:center;padding:16px;margin-bottom:12px}
+.viewfinder video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.viewfinder .frame{position:absolute;inset:18%;border:2px solid var(--accent);border-radius:8px;box-shadow:0 0 0 999px rgba(0,0,0,.25);pointer-events:none}
+.viewfinder .msg{position:relative;max-width:26ch}
+.paste{display:flex;gap:8px;margin-top:10px}
+.paste input{flex:1;min-width:0}
+#searchOut{margin-top:8px}
+.samples{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.sample{display:grid;gap:6px;justify-items:center;text-align:center;padding:10px;height:auto;min-height:44px;font-weight:400}
+.sample img{width:92px;height:92px;image-rendering:pixelated;background:#fff;border-radius:4px}
+.sample b{font-family:var(--mono);font-size:12px;font-weight:500}
+.sample span{font-size:12px;color:var(--muted);line-height:1.3}
+.sample strong{color:var(--fg);font-weight:600}
+.hint{font-size:12px;color:var(--muted);margin:10px 0 0}
+.hint a{color:var(--accent)}
+/* quotation */
+.qhead{display:grid;grid-template-columns:130px minmax(0,1fr) 120px 130px;gap:10px;margin-bottom:14px}
+@media (max-width:560px){.qhead{grid-template-columns:minmax(0,1fr)}}
+.badge{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:99px;background:var(--surface-2);color:var(--muted)}
+.badge.final{background:var(--accent-soft);color:var(--accent)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;font-weight:600;padding:8px 10px;background:var(--surface-2);white-space:nowrap}
+td{padding:8px 10px;border-top:1px solid var(--line);vertical-align:middle}
+.num{text-align:right}
+.item b{display:block;font-weight:600;font-size:16px}
+.item .sub{display:flex;flex-wrap:wrap;gap:2px 8px;align-items:baseline;font-size:13px;color:var(--muted)}
+.item code{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.qty{display:flex;align-items:center;gap:4px}
+.qty button{min-width:44px;padding:0}
+.qty input{width:60px;text-align:center}
+.disc{display:flex;align-items:center;gap:4px}
+.disc input{width:72px;text-align:right}
+tr.over td{background:var(--warn-soft)}
+tr.flash td{animation:flash 1.1s ease-out}
+@keyframes flash{from{background:var(--accent-soft)}to{background:transparent}}
+@media (prefers-reduced-motion:reduce){tr.flash td{animation:none}}
+.flag{display:block;font-size:11px;color:var(--warn);font-weight:600;margin-top:2px}
+.empty{padding:28px 16px;text-align:center;color:var(--muted)}
+.totals{margin:16px 0 0 auto;max-width:340px;display:grid;gap:6px;font-variant-numeric:tabular-nums}
+.totals div{display:flex;justify-content:space-between;gap:16px}
+.totals .grand{border-top:2px solid var(--fg);padding-top:8px;margin-top:4px;font-size:20px;font-weight:600}
+.opts{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;margin-top:14px;font-size:13px;color:var(--muted)}
+.opts label{display:flex;align-items:center;gap:8px}
+.opts input[type=checkbox]{width:20px;min-height:20px}
+.opts input[type=number]{width:70px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.actions button{flex:1 1 130px}
+.confirm{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px;padding:12px;border:1px solid var(--bad);border-radius:8px}
+.confirm span{flex:1 1 240px;font-size:14px}
+.saved{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.saved button{min-height:36px;font-size:13px}
+.sheets{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+.sheets>div{min-width:0}
+.sheets h3{margin:0 0 6px;font-size:13px;font-weight:600}
+.sheets table{font-size:11px}
+.sheets th,.sheets td{padding:6px 5px}
+.sheets th{white-space:normal;vertical-align:bottom}
+.sheets td{white-space:normal;overflow-wrap:anywhere}
+.sheets td.num{white-space:nowrap}
+.sheets td[dir=auto]{min-width:110px}
+.tabinfo{display:flex;flex-wrap:wrap;gap:4px 20px;margin:0 0 8px;font-size:12px}
+.tabinfo div{display:flex;gap:6px;align-items:baseline}
+.tabinfo span{color:var(--muted)}
+.sheets tfoot td{border-top:1px solid var(--line);font-weight:600}
+.sheets tfoot tr.grand td{border-top:2px solid var(--fg)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;max-width:calc(100% - 32px);z-index:20;opacity:1;transition:opacity .6s ease}
+.toast.out{opacity:0}
+.toast {
+  white-space: pre-line;
+  text-align: center;
+  direction: rtl;
+}
+/* ---------- label printing page ---------- */
+.lab-grid{display:flex;flex-wrap:wrap;gap:8px}
+.lab{display:flex;align-items:center;gap:8px;padding:6px;border:1px dashed var(--line);border-radius:4px;background:#fff;color:#000;break-inside:avoid}
+.lab img{width:var(--qr,3cm);height:var(--qr,3cm);image-rendering:pixelated}
+.lab-t{display:grid;gap:1px;font-size:11px;line-height:1.25;max-width:5cm}
+.lab-t b{font-family:var(--mono);font-size:12px}
+.lab-t strong{font-size:14px;margin-top:2px}
+textarea{width:100%;min-height:150px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);font:12px/1.5 var(--mono)}
+.errs{color:var(--bad);font-size:13px;margin:8px 0 0}
+@media print{
+  body{background:#fff;color:#000;padding:0}
+  .no-print{display:none!important}
+  .lab{border:1px dashed #999}
+}
+
+/* ---------- customer quotation PDF layout (printed from the page) ---------- */
+#printSheet{display:none}
+@page{size:A4 portrait;margin:8mm}
+@page quote{size:A4 portrait;margin:8mm 8mm 14mm 8mm;@bottom-left{content:counter(pages) "-" counter(page) " \2067صفحة\2069";font:11px Arial,sans-serif;color:#000;text-align:left;vertical-align:middle;padding:0;width:24mm;white-space:nowrap}
+  @bottom-center{content:"Jeddah - Ash Sharafiyah Dist. - 6410 Abu bakr as Siddiq - Almerah Building  |  \2067جدة - حي الشرفية - 6410 أبوبكر الصديق - مركز الميرة\2069";font:bold 8.5px Arial,Tahoma,sans-serif;font-weight:700;color:#000;white-space:nowrap;vertical-align:middle;padding:0}}
+@media print{
+  body.pq{background:#fff!important;color:#000;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body.pq .wrap,body.pq .toast{display:none!important}
+  body.pq #printSheet{display:block}
+}
+#printSheet{page:quote;padding-right:1px;direction:ltr;color:#000;font:11px/1.35 "IBM Plex Sans Arabic","IBM Plex Sans",Tahoma,Arial,sans-serif;background:#fff}
+#printSheet table{width:100%;border-collapse:collapse;table-layout:fixed}
+#printSheet td,#printSheet th{padding:2px 4px;vertical-align:middle}
+#printSheet td,#printSheet th{border-top:0}   /* stops the on-screen table lines showing in the PDF */
+#printSheet .ar{direction:rtl;text-align:right}
+#printSheet .c{text-align:center}
+#printSheet .en{direction:ltr;text-align:left}
+#printSheet .bx td,#printSheet .bx th{border:1px solid #000}
+#printSheet .head td{vertical-align:top;font-weight:700}
+#printSheet .head .big{font-size:15px}
+#printSheet .kv td{border:1px solid #000;font-weight:700;font-size:10px;height:6.2mm}
+#printSheet .kv .lbl{background:#fff}
+#printSheet .title-en{background:#006fc0;color:#fff;font-size:16px;font-weight:700;text-align:center;border:1px solid #000}
+#printSheet .title-ar{background:#00afef;color:#fff;font-size:12px;font-weight:700;text-align:center;border:1px solid #000}
+#printSheet .cu .cl{background:#006fc0;color:#fff;font-weight:700;font-size:9.5px;text-align:center}
+#printSheet .cu .cla{background:#006fc0;color:#fff;font-weight:700;font-size:9.5px;text-align:center}
+#printSheet .cu .v{background:#f1f1f1;font-weight:700;text-align:center}
+#printSheet .cu .vn{background:#f1f1f1;font-weight:700;text-align:center}
+#printSheet .items th{text-align:center;vertical-align:middle;color:#fff;font-weight:700;font-size:8.5px;line-height:1.2;text-transform:none;letter-spacing:0;padding:2px 2px;overflow-wrap:anywhere}
+#printSheet .items .ma{background:#cc0099}
+#printSheet .items .pu{background:#6f2f9f}
+#printSheet .items .gb{background:#677589;   font-weight: bold;}
+#printSheet .items .lb{background:#bfdbef;color:#000; font-weight: 700;}
+#printSheet .items td{border-top:0;font-weight:700;text-align:center;height:34mm;font-size:10px}
+#printSheet .items td.pic{padding:1mm}
+#printSheet img.pic{display:block;margin:0 auto;max-width:100%;max-height:31mm;object-fit:contain}
+#printSheet .items tr{break-inside:avoid;page-break-inside:avoid}
+#printSheet .items thead{display:table-header-group}
+#printSheet .items .desc{direction:rtl}
+#printSheet .tot td{border:1px solid #000;font-weight:700;font-size:10px;height:6.4mm;background:#f6f6f6}
+#printSheet .tot .v{text-align:center;font-size:11px;background:#fff}
+#printSheet .words{background:#0264aa;color:#fff;font-weight:700;font-size:12px;text-align:center;border:1px solid #000;padding:4px 6px;margin-top:5px}
+#printSheet .notes{margin-top:5px;break-inside:avoid}
+#printSheet .notes td{border:1px solid #000;height:30mm;vertical-align:top;font-weight:700}
+#printSheet .stamp{text-align:center;font-size:10.5px;padding-top:3px}
+#printSheet .sar{height:.78em;width:auto;vertical-align:-.08em;margin-left:1px}
+#printSheet .addr{margin-top:6px;text-align:center;font-weight:700;font-size:10px;line-height:1.5}
+#printSheet .addr .ar{text-align:center}
+#printSheet .notes td{height:auto}
+#printSheet .foot{break-inside:avoid;page-break-inside:avoid}
+#printSheet .nb{font-weight:400}
+
+.stock{display:block;margin-top:2px;font-size:12px;color:var(--accent);font-weight:600}
+.stock small{font-weight:400;color:var(--muted)}
+.stock.zero{color:var(--warn)}
+.stock.bad{color:var(--bad)}
+#searchOut{display:grid;gap:6px}
+.hit{display:grid;gap:2px;text-align:start;padding:8px 10px;width:100%}
+.hit span{font-size:12px;color:var(--muted)}
+#printSheet .page>thead>tr>td,#printSheet .page>tbody>tr>td,#printSheet .page>tfoot>tr>td{padding:0;border:0}
+#printSheet .page{table-layout:fixed}
+#printSheet .hgap{height:3mm}
+#printSheet .items .nw{white-space:nowrap}
+#printSheet .items th.sm{font-size:7.5px;letter-spacing:0}
+#printSheet .mf{display:grid;grid-template-columns:auto 22mm;justify-content:center;align-items:center;column-gap:2mm;padding:0;direction:ltr}
+#printSheet .mf .n{white-space:nowrap;text-align:left}
+#printSheet .mf .sar{height:1em;width:auto;display:block}
+#printSheet .tot.cnt td{background:#f6f6f6}
+#printSheet .notes .c{text-align:center}
+#printSheet .fspace{height:8mm}
+#printSheet .pfoot{position:fixed;left:0;right:0;bottom:0;text-align:center;font-size:8px;line-height:1.2;white-space:nowrap}
+#printSheet .pfoot .ar{display:inline;font-weight:700;direction:rtl}
+#printSheet .pfoot .en{display:inline;font-weight:400;direction:ltr}
+
+.tablewrap.cap thead th{position:sticky;top:0;z-index:1}
+.tabtotals{border:1px solid var(--line);border-top:0;border-radius:0 0 8px 8px;font-size:12px}
+.tabtotals div{display:flex;justify-content:space-between;gap:12px;padding:5px 8px;border-top:1px solid var(--line)}
+.tabtotals div:first-child{border-top:0}
+.tabtotals .grand{border-top:2px solid var(--fg);font-weight:700;font-size:13px}
+.tabtotals:empty{display:none}
+section[aria-labelledby=h-conn] .row .f{flex:1 1 100%}
+button.linkbtn{background:transparent;cursor:pointer}button.linkbtn:hover{background:var(--accent-soft)}button.linkbtn:disabled{opacity:.45;cursor:not-allowed}
+
+/* ---- PDF: summary (totals) table with a bold, rounded outer border ---- */
+#printSheet .tot:not(.cnt){border-collapse:separate;border-spacing:0;border:2px solid #000;border-radius:6px}
+#printSheet .tot:not(.cnt) td{border:0;border-right:1px solid #000;border-bottom:1px solid #000}
+#printSheet .tot:not(.cnt) tr>:last-child{border-right:0}
+#printSheet .tot:not(.cnt) tr:last-child>td{border-bottom:0}
+#printSheet .tot:not(.cnt) tr:first-child>:first-child{border-top-left-radius:5px}
+#printSheet .tot:not(.cnt) tr:first-child>:last-child{border-top-right-radius:5px}
+#printSheet .tot:not(.cnt) tr:last-child>:first-child{border-bottom-left-radius:5px}
+#printSheet .tot:not(.cnt) tr:last-child>:last-child{border-bottom-right-radius:5px}
+#printSheet .head td div{line-height:1.5}
+
+/* ---- PDF: notes/validity table: centered text, rounded outer border like the date box ---- */
+#printSheet .notes td{text-align:center;vertical-align:middle}
+#printSheet .notes{border-collapse:separate;border-spacing:0;border:1px solid #000;border-radius:6px}
+#printSheet .notes td{border:0;border-right:1px solid #000;border-bottom:1px solid #000}
+#printSheet .notes tr>:last-child{border-right:0}
+#printSheet .notes tr:last-child>td,#printSheet .notes td[rowspan]{border-bottom:0}
+#printSheet .notes td[rowspan]{border-top-left-radius:5px;border-bottom-left-radius:5px}
+#printSheet .notes tr:first-child>:last-child{border-top-right-radius:5px}
+#printSheet .notes tr:last-child>:last-child{border-bottom-right-radius:5px}
+
+/* customer name suggestions (2 rows visible, scroll for more) and the full-width delete button */
+.custWrap{position:relative;min-width:0}
+.custOut{position:absolute;left:0;right:0;top:100%;z-index:6;display:grid;gap:6px;padding:4px;margin-top:2px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.actions .wide{flex:1 1 100%}
+#printSheet .words{border-radius:6px}
+
+/* apply-to-all discount button, shown under the discount box after typing */
+.disc{flex-wrap:wrap;justify-content:flex-end}
+.applyAll{flex:1 1 100%;min-height:30px;padding:2px 8px;font-size:12px;line-height:1.2;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-fg);cursor:pointer}
+.applyAll small{display:block;font-size:10px;opacity:.85}
+.applyAll[hidden]{display:none}
+button.openQuote:disabled{opacity:.45;cursor:not-allowed}
+.en{color:var(--muted);font-size:.92em}
+.hint,.top p,.empty{unicode-bidi:plaintext}
+
+/* PDF: force the table heading labels (English + Arabic rows) to be truly bold */
+#printSheet .items thead th{font-family:Arial,Tahoma,"IBM Plex Sans Arabic",sans-serif;font-weight:900;-webkit-text-stroke:.3px currentColor;paint-order:stroke fill}
+/* PDF: customer info table fully bold */
+/* #printSheet .cu td{font-family:Arial,Tahoma,"IBM Plex Sans Arabic",sans-serif;font-weight:900;-webkit-text-stroke:.3px currentColor;paint-order:stroke fill} */
+
+/* PDF: customer table: labels bold, values normal */
+#printSheet .cu .cl,#printSheet .cu .cla{font-family:Arial,Tahoma,"IBM Plex Sans Arabic",sans-serif;font-weight:900;-webkit-text-stroke:.3px currentColor;paint-order:stroke fill}
+#printSheet .cu .v,#printSheet .cu .vn{font-family:"IBM Plex Sans Arabic","IBM Plex Sans",Tahoma,Arial,sans-serif;font-weight:400!important;font-size:10px!important;-webkit-text-stroke:0}
+/* PDF: notes text at the top-right; validity text right-aligned and vertically centered */
+#printSheet .notes td.nt{text-align:right;vertical-align:top;direction:rtl;unicode-bidi:plaintext;padding:2mm 2.5mm;white-space:pre-wrap;overflow-wrap:anywhere}
+#printSheet .notes td.vd{text-align:right;vertical-align:middle;direction:rtl;padding:0 2.5mm}
+
+/* merged "update items / update customers" box: two columns side by side */
+.updgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.updcol{min-width:0;display:grid;gap:0;align-content:start;padding-inline:0}
+.updcol+.updcol{border-inline-start:1px solid var(--line);padding-inline-start:20px}
+.updcol h3{margin:0 0 10px;font-size:13px;font-weight:600}
+@media (max-width:700px){.updgrid{grid-template-columns:minmax(0,1fr)}.updcol+.updcol{border-inline-start:0;padding-inline-start:0;border-top:1px solid var(--line);padding-top:16px}}
+
+/* update boxes: last-update and total lines */
+.updinfo{display:grid;gap:4px;margin-top:12px;font-size:13px}
+.updinfo span{color:var(--muted)}
+.updinfo b{font-weight:600}
+.updcol>.hint:first-of-type{margin:0 0 10px}
+
+/* ---- PDF tweaks (3 Nov) ---- */
+/* Dark gray used for the company name block (Arabic + English). Change this one colour to change it everywhere. */
+#printSheet{--pdf-gray:#404040}
+#printSheet .head td{color:var(--pdf-gray)}
+/* English company name and the date / doc no. / VAT box: not bold (the red Doc no. and blue VAT colours stay) */
+#printSheet .head td.en,#printSheet .head td.en div{font-weight:400}
+#printSheet .kv td{font-weight:400}
+/* customer name in the customer table: 2 sizes bigger (was 10px) */
+#printSheet .cu .v.cn{font-size:12px!important}
+/* settings page: a link-style button and the page layout */
+.settingsgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px;align-items:start}
+a.linkbtn.wide{display:flex;justify-content:center;text-align:center}
+
+/* ---- PDF tweaks (3 Nov, 2) ---- */
+/* ONE gray for all dark writing in the PDF (labels, values, company name, headings, footer). Change this colour to change them all. */
+#printSheet{--pdf-gray:#404040;color:var(--pdf-gray)}
+#printSheet .items .lb{color:var(--pdf-gray)}
+@page quote{@bottom-left{color:#404040}@bottom-center{color:#404040}}
+/* Total Quantity / Total Items: value cell white, label cells keep the light gray */
+#printSheet .tot.cnt td.v{background:#fff}
+
+/* ---- logo above the page title ---- */
+.brand{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.sitelogo{display:block;height:108px;width:auto}
+
+/* ---- readable text when the page background is light and the theme is "dark" ----
+   --ink = text sitting directly on the page background (title, intro). Inputs get dark text on their light boxes. */
+:root{--ink:var(--fg)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--ink:#3a4047}}
+:root[data-theme="dark"]{--ink:#3a4047}
+h1,.top p,.top a{color:var(--ink)}
+.top p .en{color:var(--ink);opacity:.8}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) input,:root:not([data-theme="light"]) select,:root:not([data-theme="light"]) textarea{color:#1f262c}
+  :root:not([data-theme="light"]) input::placeholder{color:#6b7480}
+  :root:not([data-theme="light"]) input:disabled{-webkit-text-fill-color:#1f262c}
+  :root:not([data-theme="light"]) .toast{color:#1f262c}
+}
+
+/* PDF: Total Quantity / Total Items number cells are always white */
+#printSheet .tot.cnt td.v{background:#fff!important}
+
+
+/* settings page: "فتح صفحة الاكسل" heading uses the same gray as the page title (--ink) */
+.opnsheet h3{color:var(--ink)}
+
+/* PDF: Issue Date / Doc No / VAT box - bold (2px) outer border with rounded corners, thin (1px) lines inside.
+   Change "2px" for a thicker/thinner outer border, "6px" for rounder/squarer corners. */
+#printSheet .kv{border-collapse:separate;border-spacing:0;border:1px solid #000;border-radius:6px}
+#printSheet .kv td{border:0;border-right:1px solid #000;border-bottom:1px solid #000}
+#printSheet .kv tr>:last-child{border-right:0}
+#printSheet .kv tr:last-child>td{border-bottom:0}
+#printSheet .kv tr:first-child>:first-child{border-top-left-radius:4px}
+#printSheet .kv tr:first-child>:last-child{border-top-right-radius:4px}
+#printSheet .kv tr:last-child>:first-child{border-bottom-left-radius:4px}
+#printSheet .kv tr:last-child>:last-child{border-bottom-right-radius:4px}

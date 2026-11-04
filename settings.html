@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ar">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Atig Settings</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>الإعدادات / Settings</h1>
+    <p><a class="linkbtn" href="index.html">← العودة إلى عروض الأسعار / Back to quotations</a></p>
+  </div>
+  <div class="settingsgrid">
+            <section class="panel" aria-labelledby="h-conn">
+            <h2 id="h-conn">ربط Google Sheet / Connect Google Sheet</h2>
+        <div class="row">
+          <label class="f">رابط تطبيق Apps Script / Apps Script web app URL<input id="cfgUrl" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" spellcheck="false"></label>
+          <label class="f">الرمز السري / Secret<input id="cfgKey" type="password" autocomplete="off" spellcheck="false"></label>
+          <label class="f">رابط Google Sheet (يُعبأ تلقائياً بعد الربط) / Google Sheet link (auto-filled)<input id="cfgSheet" placeholder="https://docs.google.com/spreadsheets/d/..." autocomplete="off" spellcheck="false"></label>
+        </div>
+        <div class="actions">
+          <button class="primary" id="cfgSave" type="button">حفظ الإعدادات / Save settings</button>
+          <button id="cfgTest" type="button">اختبار الاتصال / Test connection</button>
+        </div>
+        <p class="hint" id="cfgState" role="status"></p>
+
+      </section>
+      <section class="panel updbox" aria-labelledby="h-upd">
+    <h2 id="h-upd">تحديث البيانات / Update data</h2>
+    <div class="updgrid">
+      <div class="updcol">
+        <h3>تحديث الأصناف / Update items</h3>
+        <p class="hint">.اختر ملف إكسل لتحديث الاصناف / Choose the items Excel file to update them.</p>
+        <input id="itemsFile" type="file" accept=".xlsx,.xls,.csv" aria-label="ملف إكسل للأصناف / Excel file of items">
+        <div class="updinfo" id="itemsInfo"></div>
+        <p class="hint" id="itemsMsg" role="status"></p>
+        <div class="actions"><button class="primary" id="itemsApply" type="button" hidden>تطبيق / Apply</button><button id="itemsCancel" type="button" hidden>إلغاء / Cancel</button></div>
+      </div>
+      <div class="updcol">
+        <h3>تحديث العملاء / Update customers</h3>
+        <p class="hint">.اختر ملف إكسل لتحديث العملاء / Choose the customers Excel file to update them.</p>
+        <input id="custFile" type="file" accept=".xlsx,.xls,.csv" aria-label="ملف إكسل للعملاء / Excel file of customers">
+        <div class="updinfo" id="custInfo"></div>
+        <p class="hint" id="custMsg" role="status"></p>
+        <div class="actions"><button class="primary" id="custApply" type="button" hidden>تطبيق / Apply</button><button id="custCancel" type="button" hidden>إلغاء / Cancel</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="opnsheet"> 
+      <h3> فتح صفحة الاكسل</h3>
+          <button class="openQuote" id="openQuoteBtn" type="button">فتح العرض في إكسل / Open quotation on Excel</button>
+    </div>
+
+  </section>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<script src="items.js"></script>
+<script src="qrtag.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
