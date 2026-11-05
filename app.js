@@ -717,6 +717,51 @@ async function exportQuotation(){
   toast("تم التصدير " + nm + ".xlsx\nExported");
 }
 
+/* ---------- import an Excel file into the quotation: serial (barcode) + qty + discount % per row ---------- */
+async function importQuoteExcel(file){
+  if (!(await loadXlsx())) throw new Error("تعذر تحميل قارئ إكسل. تحقق من الإنترنت.\nThe Excel reader did not load.");
+  const wb = XLSX.read(await file.arrayBuffer(), { type:"array" });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const txt = XLSX.utils.sheet_to_json(ws, { header:1, raw:false, defval:"" });   // as displayed (barcodes stay text)
+  const raw = XLSX.utils.sheet_to_json(ws, { header:1, raw:true, defval:"" });    // real numbers (discount 0.1 vs "10%")
+  const clean = s => String(s).replace(/\s+/g, " ").trim();
+  const find = (head, names) => head.findIndex(c => names.some(n => clean(c).startsWith(n)));
+  const hi = txt.findIndex(r => find(r, ["الباركود"]) >= 0);
+  if (hi < 0) throw new Error("لم أجد عمود الباركود في الملف.\nCould not find the barcode column.");
+  const head = txt[hi], cB = find(head, ["الباركود"]), cQ = find(head, ["العدد", "الكمية"]), cD = find(head, ["نسبة الخصم", "الخصم"]);
+  let added = 0, merged = 0; const missing = [];
+  for (let i = hi + 1; i < txt.length; i++){
+    const serial = clean(txt[i][cB]); if (!serial || serial === "false" || serial.startsWith("SUM")) continue;
+    const it = itemBySerial(serial);
+    if (!it){ missing.push(serial); continue; }
+    let qty = cQ >= 0 ? Math.round(toNum(raw[i][cQ])) : 1; if (!(qty > 0)) qty = 1;
+    let disc = 0;
+    if (cD >= 0){
+      const rv = raw[i][cD];
+      if (typeof rv === "number") disc = rv > 0 && rv <= 1 ? rv * 100 : rv;     // 0.1 stored as 10%
+      else disc = toNum(rv);                                                    // text such as "10%" or "10"
+    }
+    disc = Math.min(100, Math.max(0, Math.round(disc * 100) / 100));
+    const ex = state.lines.find(l => l.serial === serial);
+    if (ex){ ex.qty += qty; ex.disc = disc; merged++; }
+    else { state.lines.push({ ...it, qty, disc, manualPrice: !it.price }); added++; }
+  }
+  return { added, merged, missing };
+}
+if ($("importBtn")) $("importBtn").onclick = () => $("importFile").click();
+if ($("importFile")) $("importFile").addEventListener("change", async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  toast("جارٍ قراءة " + f.name + "…\nReading…");
+  try{
+    const { added, merged, missing } = await importQuoteExcel(f);
+    if (!added && !merged){
+      return toast(missing.length ? "لم يوجد أي صنف من الملف في قائمة الأصناف (" + missing.length + ").\nNone of the file's items were found in the item list." : "لا توجد أصناف في هذا الملف.\nNo items found in that file.", 5000);
+    }
+    renderLines(); renderTotals(); queueAutosave();
+    toast("تمت إضافة " + (added + merged) + " صنف إلى العرض" + (missing.length ? " · غير موجود: " + missing.length : "") + "\nAdded " + (added + merged) + " items to the quotation" + (missing.length ? " · not found: " + missing.slice(0, 5).join(", ") + (missing.length > 5 ? "…" : "") : ""), 7000);
+  }catch(err){ toast(err.message || "تعذرت قراءة هذا الملف.\nCould not read that file.", 5000); }
+});
+
 /* ---------- customers: search by name, tap to fill in the rest ---------- */
 /* Each row: [customer no, name, VAT no, address, commercial registration, country, mobile]. */
 const CUST_KEY = "gqs-customers";

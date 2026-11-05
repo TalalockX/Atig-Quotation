@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="stylesheet" href="style.css">
+
 </head>
 <body>
 <div class="wrap">
@@ -77,7 +78,9 @@
           <label><input type="checkbox" id="vatOn" checked> إضافة ضريبة القيمة المضافة 15% / Add VAT 15%</label>        </div>
         <div class="actions">
           <button class="primary" id="saveBtn" type="button">حفظ</button>
-          <button class="primary" id="exportBtn" type="button"> اكسل نظام سلس تصدير</button>
+          <button class="primary" id="exportBtn" type="button">تصدير اكسل نظام سلس</button>
+          <button class="primary" id="importBtn" type="button">استيراد اكسل نظام سلس</button>
+          <input id="importFile" type="file" accept=".xlsx,.xls,.csv" hidden aria-label="استيراد اكسل نظام سلس">
           <button class="primary" id="pdfBtn" type="button">PDF عربي</button>
           <button class="wide" id="newBtn" type="button">عرض جديد / New quotation</button>
           <button class="danger wide" id="delBtn" type="button">حذف العرض الحالي / Delete quotation</button>
