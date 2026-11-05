@@ -346,3 +346,9 @@ input:disabled{-webkit-text-fill-color:#1f262c}
 /* no up/down arrows on number boxes (qty, discount) */
 input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 input[type=number]{-moz-appearance:textfield;appearance:textfield}
+
+/* PDF: English writing uses the same dark gray as the Arabic writing (the page-wide .en colour is lighter). */
+#printSheet .en{color:var(--pdf-gray)}
+
+/* printing / PDF must stay white and light even though the page itself uses color-scheme:dark */
+@media print{ :root{color-scheme:light} html{background:#fff} }

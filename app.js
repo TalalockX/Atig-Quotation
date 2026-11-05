@@ -20,9 +20,9 @@ const CONFIG = { SCRIPT_URL: "", SECRET: "", SHEET_URL: "" };
 /* The Connect panel at the bottom of the page saves these on the tablet, so no file editing is needed. */
 try{ Object.assign(CONFIG, JSON.parse(localStorage.getItem("gqs-config") || "{}")); }catch(e){}
 
-/* The gallery's real items (items.js, made from the Excel): serial -> [Arabic name, selling price, stock]. */
+/* The gallery's real items (items.js, made from the Excel): serial -> [Arabic name, selling price, stock, English description (optional)]. */
 const ITEMS = window.GQS_ITEMS || {};
-const itemBySerial = s => { const r = ITEMS[s]; return r ? { serial:s, en:"", ar:r[0] || s, price:r[1] || 0, cur:"SAR" } : null; };
+const itemBySerial = s => { const r = ITEMS[s]; return r ? { serial:s, en:r[3] || "", ar:r[0] || s, price:r[1] || 0, cur:"SAR" } : null; };
 const stockOf = serial => ITEMS[serial] ? ITEMS[serial][2] : null;
 /* Units of this item on every quotation (saved or draft, never deleted ones) - the open one counted live. */
 function usedQty(serial){
@@ -407,17 +407,43 @@ function tafqeet(amount){
   return parts.join(" و") + " فقط لا غير";
 }
 
+/* ---- English version of the quotation PDF: price in words, validity sentence, item descriptions ---- */
+/* "day" for 1, "days" for anything else (also when empty) */
+function dayWordEn(v){
+  const n = parseInt(String(v || "").replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)), 10);
+  return n === 1 ? "day" : "days";
+}
+/* English amount in words: "One Hundred Fifty-Two Saudi Riyals and Ninety-Five Halalas Only" */
+function tafqeetEn(amount){
+  const ones = ["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];
+  const tens = ["","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
+  const u100 = n => n < 20 ? ones[n] : tens[Math.floor(n / 10)] + (n % 10 ? "-" + ones[n % 10] : "");
+  const u1000 = n => { const h = Math.floor(n / 100), r = n % 100; return (h ? ones[h] + " Hundred" + (r ? " " : "") : "") + (r ? u100(r) : ""); };
+  const words = n => { if (n === 0) return "Zero";
+    const p = [], b = Math.floor(n / 1e9), m = Math.floor((n % 1e9) / 1e6), t = Math.floor((n % 1e6) / 1000), r = n % 1000;
+    if (b) p.push(u1000(b) + " Billion"); if (m) p.push(u1000(m) + " Million"); if (t) p.push(u1000(t) + " Thousand"); if (r) p.push(u1000(r));
+    return p.join(" "); };
+  const total = Math.round(amount * 100), riyal = Math.floor(total / 100), halala = total % 100;
+  const parts = [];
+  if (riyal || !halala) parts.push(words(riyal) + (riyal === 1 ? " Saudi Riyal" : " Saudi Riyals"));
+  if (halala) parts.push(words(halala) + (halala === 1 ? " Halala" : " Halalas"));
+  return parts.join(" and ") + " Only";
+}
+/* English description of a line: the item list's English column first (so older quotations get it too), then what the line carries, then the Arabic name. */
+const enName = l => (ITEMS[l.serial] && ITEMS[l.serial][3]) || l.en || l.ar || l.serial;
+
 const SAR = '<svg class="sar" viewBox="0 0 1124.14 1256.39" aria-label="SAR"><path fill="currentColor" d="M699.62,1113.02h0c-20.06,44.48-33.32,92.75-38.4,143.37l424.51-90.24c20.06-44.47,33.31-92.75,38.4-143.37l-424.51,90.24Z"/><path fill="currentColor" d="M1085.73,895.8c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.33v-135.2l292.27-62.11c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.27V66.13c-50.67,28.45-95.67,66.32-132.25,110.99v403.35l-132.25,28.11V0c-50.67,28.44-95.67,66.32-132.25,110.99v525.69l-295.91,62.88c-20.06,44.47-33.33,92.75-38.42,143.37l334.33-71.05v170.26l-358.3,76.14c-20.06,44.47-33.32,92.75-38.4,143.37l375.04-79.7c30.53-6.35,56.77-24.4,73.83-49.24l68.78-101.97v-.02c7.14-10.55,11.3-23.27,11.3-36.97v-149.98l132.25-28.11v270.4l424.53-90.28Z"/></svg>';
 const money = n => SAR + " " + fmt(n);
 const mf = n => `<div class="mf"><span class="sym">${SAR}</span><span class="n">${fmt(n)}</span></div>`;
-function printHtml(){
+function printHtml(lang){
+  const EN = lang === "en";   // "en" = English version, anything else = Arabic version
   const q = state.quote, t = calc(), vp = vatRate();
   const rows = state.lines.map((l, i) => { const c = lineCalc(l, vp);
     return `<tr class="bx">
       <td class="sub">${fmt(c.total)}</td><td class="nw">${fmt(c.vatAmt)}</td><td class="nw">${fmt(c.discAmt)}</td><td class="nw">${l.disc}%</td>
       <td class="nw">${fmt(c.taxable)}</td><td class="nw">${fmt(l.price)}</td><td class="nw">${l.qty}</td><td class="pic"><img class="pic" data-serial="${esc(l.serial)}" alt=""></td>
-      <td class="desc">${esc(l.ar || l.en)}</td><td class="nw">${esc(l.serial)}</td><td class="nw">${i + 1}</td></tr>`; }).join("");
-  const W0 = ["10%","8.8%","9.8%","6%","9.8%","7.6%","5%","20%","12.8%","8.6%","3.8%"];   // widths, left to right: Subtotal, Tax, Discount, %, Taxable, Unit price, QTY, Picture, Description, Barcode, #  (any numbers: they are scaled to add up to 100%)
+      <td class="desc" ${EN ? 'dir="ltr"' : ""}>${esc(EN ? enName(l) : (l.ar || l.en))}</td><td class="nw">${esc(l.serial)}</td><td class="nw">${i + 1}</td></tr>`; }).join("");
+  const W0 = ["10%","8.8%","9.8%","6%","9.8%","7.6%","5%","20%","11%","11%","3.2%"];   // widths, left to right: Subtotal, Tax, Discount, %, Taxable, Unit price, QTY, Picture, Description, Barcode, #  (any numbers: they are scaled to add up to 100%)
   const W = W0.map(w => (parseFloat(w) * 100 / W0.reduce((s, x) => s + parseFloat(x), 0)).toFixed(3) + "%");
   // The blue boxes (title + customer labels) start exactly where the Description column starts below them
   const blueW = parseFloat(W[8]) + parseFloat(W[9]) + parseFloat(W[10]);
@@ -516,23 +542,23 @@ function printHtml(){
   <br>
   <table class="tot cnt"><tr><td class="en" style="width:${W.slice(0,6).reduce((s,w)=>s+parseFloat(w),0).toFixed(3)}%; font-size:10px;" >Total Quantity</td><td class="v" style="width:${W[6]}">${state.lines.reduce((s, l) => s + (+l.qty || 0), 0)}</td><td class="ar">إجمالي الكمية</td></tr></table>
   <table class="tot" style="margin-top:3mm">${tot}</table>
-  <div class="words ar">${tafqeet(t.total)}</div>
+  <div class="words${EN ? "" : " ar"}"${EN ? ' dir="ltr"' : ""}>${EN ? tafqeetEn(t.total) : tafqeet(t.total)}</div>
   <table class="notes">
     <tr><td rowspan="2" style="width:26%"><div style="height:30mm;overflow:hidden;text-align:center;padding-top:1mm"><img src="stamp.png" alt="" style="height:27mm;width:auto;max-width:94%;object-fit:contain"></div></td>
       <td class="ar nt" style="width:60%;height:18mm">${esc(q.notes || "")}</td><td class="ar c" style="width:14%"><bdi>ملاحظات</bdi><br>Notes</td></tr>
-    <tr><td class="ar vd" style="height:10mm">العرض ساري لمدة ( <b style="display:inline-block;min-width:7mm;text-align:center">${esc(q.validity || "")}</b> ) ${dayWord(q.validity)}</td><td class="ar c"><bdi>صلاحية العرض</bdi><br>Validity</td></tr>
+    <tr><td class="ar vd" style="height:10mm">${EN ? `<span dir="ltr">This offer is valid for ( <b style="display:inline-block;min-width:7mm;text-align:center">${esc(q.validity || "")}</b> ) ${dayWordEn(q.validity)}</span>` : `العرض ساري لمدة ( <b style="display:inline-block;min-width:7mm;text-align:center">${esc(q.validity || "")}</b> ) ${dayWord(q.validity)}`}</td><td class="ar c"><bdi>صلاحية العرض</bdi><br>Validity</td></tr>
   </table></div>`;
   return `<table class="page"><thead><tr><td>${header}</td></tr></thead><tbody><tr><td>${body}</td></tr></tbody></table>`;
 }
-$("pdfBtn").addEventListener("click", () => {
-if (!state.lines.length)
-  return toast("أضف صنفاً واحداً على الأقل.\nAdd at least one item first.");
-  $("printSheet").innerHTML = printHtml();
+function savePdf(lang){
+  if (!state.lines.length)
+    return toast("أضف صنفاً واحداً على الأقل.\nAdd at least one item first.");
+  $("printSheet").innerHTML = printHtml(lang);
   /* Arabic stays bold; English words (labels, headings, address) are set in normal weight. Values stay bold. */
   const tw = document.createTreeWalker($("printSheet"), NodeFilter.SHOW_TEXT), nodes = [];
   while (tw.nextNode()) nodes.push(tw.currentNode);
   nodes.forEach(n => {
-    if (!/[A-Za-z]/.test(n.nodeValue) || n.parentElement.closest(".items tbody, .v, .vn, .c, .stamp, .notes")) return;
+    if (!/[A-Za-z]/.test(n.nodeValue) || n.parentElement.closest(".items tbody, .v, .vn, .c, .stamp, .notes, .words")) return;
     const span = document.createElement("span");
     span.innerHTML = esc(n.nodeValue).replace(/[A-Za-z(][A-Za-z0-9 .,()\-%'&]*/g, m => '<span class="nb">' + m + '</span>');
     n.replaceWith(...span.childNodes);
@@ -554,7 +580,9 @@ if (!state.lines.length)
   const fixed = [...$("printSheet").querySelectorAll("img:not(.pic)")].map(im => im.complete ? 0 : new Promise(r => { im.onload = r; im.onerror = r; }));
   const pics = [...$("printSheet").querySelectorAll("img.pic")].map(settle);
   Promise.race([Promise.all([...fixed, ...pics]), new Promise(r => setTimeout(r, 15000))]).then(() => setTimeout(() => window.print(), 60));
-});
+}
+$("pdfBtn").addEventListener("click", () => savePdf("ar"));
+if ($("pdfEnBtn")) $("pdfEnBtn").addEventListener("click", () => savePdf("en"));
 
 /* ---------- toast ---------- */
 let tt, tf;
@@ -569,7 +597,7 @@ function toast(m, ms = 3200){
 const norm = s => String(s).toLowerCase().replace(/[\u064B-\u0652\u0640]/g,"").replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي");
 let searchIndex = null;
 function searchItems(q){
-  if (!searchIndex) searchIndex = Object.keys(ITEMS).map(s => [s, norm(ITEMS[s][0]), s.toLowerCase()]);
+  if (!searchIndex) searchIndex = Object.keys(ITEMS).map(s => [s, norm(ITEMS[s][0] + " " + (ITEMS[s][3] || "")), s.toLowerCase()]);
   const toks = norm(q).split(/\s+/).filter(Boolean); if (!toks.length) return [];
   const out = [];
   for (const [s, n, sl] of searchIndex){
@@ -631,20 +659,26 @@ async function readExcel(file){
   if (hi < 0) throw new Error('Could not find the column "الباركود" in the first sheet.');
   const col = {}; rows[hi].forEach((c, i) => { if (String(c).trim()) col[String(c).trim()] = i; });
   for (const need of ["الباركود", "الصنف", "سعر البيع", "العدد"]) if (!(need in col)) throw new Error('Missing column: ' + need);
-  const map = {}; let skipped = 0, noPrice = 0, noName = 0, inStock = 0;
+  /* Optional English description column. Accepted headings (any one): Description, English, Item English, الصنف انجليزي ... */
+  const enHeads = ["description", "english", "item english", "english description", "name en", "الصنف انجليزي", "الصنف بالانجليزي", "الصنف بالإنجليزي", "الوصف بالانجليزي", "الوصف بالإنجليزي", "الوصف انجليزي"];
+  let enCol = -1; rows[hi].forEach((c, i) => { if (enCol < 0 && enHeads.includes(String(c).trim().toLowerCase())) enCol = i; });
+  const map = {}; let skipped = 0, noPrice = 0, noName = 0, inStock = 0, withEn = 0;
   rows.slice(hi + 1).forEach(r => {
     const s = String(r[col["الباركود"]]).trim();
     if (!s) { skipped++; return; }
     const name = String(r[col["الصنف"]]).trim(), price = Math.round(toNum(r[col["سعر البيع"]]) * 100) / 100, qty = Math.round(toNum(r[col["العدد"]]));
     if (!price) noPrice++; if (!name) noName++; if (qty > 0) inStock++;
-    map[s] = [name, price, qty];
+    let en = enCol >= 0 ? String(r[enCol] == null ? "" : r[enCol]).trim() : "";
+    if (/^[#=]/.test(en) || /[\u0600-\u06FF]/.test(en)) en = "";   // formula errors (#ERROR!) or text that is still Arabic are ignored
+    if (en) withEn++;
+    map[s] = en ? [name, price, qty, en] : [name, price, qty];
   });
   const count = Object.keys(map).length;
   if (!count) throw new Error("لا توجد أصناف في هذا الملف. / No items found in that file.");
-  return { map, count, skipped, noPrice, noName, inStock };
+  return { map, count, skipped, noPrice, noName, inStock, withEn, hasEnCol: enCol >= 0 };
 }
 async function pushItems(map){
-  const items = Object.keys(map).map(s => [s, map[s][0], map[s][1], map[s][2]]);
+  const items = Object.keys(map).map(s => [s, map[s][0], map[s][1], map[s][2], map[s][3] || ""]);
   const res = await fetch(CONFIG.SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify({ key:CONFIG.SECRET, putItems:true, items }) });
   const out = await res.json();
   if (!out.ok) throw new Error(out.error === "Bad quote id" ? "Your Apps Script is out of date. Paste the new Code.gs and deploy a New version." : out.error);
@@ -657,7 +691,7 @@ $("itemsFile").addEventListener("change", async e => {
   try{
     pending = await readExcel(f);
     const p = pending;
-    $("itemsMsg").textContent = p.count + " items found (" + p.inStock + " in stock" + (p.noPrice ? ", " + p.noPrice + " without a price" : "") + (p.noName ? ", " + p.noName + " without a name" : "") + (p.skipped ? "; " + p.skipped + " rows without a barcode skipped" : "") + "). This replaces the current list. Apply?";
+    $("itemsMsg").textContent = p.count + " items found (" + p.inStock + " in stock" + (p.hasEnCol ? ", " + p.withEn + " with an English description" : ", no English description column found")  + (p.noPrice ? ", " + p.noPrice + " without a price" : "") + (p.noName ? ", " + p.noName + " without a name" : "") + (p.skipped ? "; " + p.skipped + " rows without a barcode skipped" : "") + "). This replaces the current list. Apply?";
     $("itemsApply").hidden = $("itemsCancel").hidden = false;
   }catch(err){ $("itemsMsg").textContent = err.message || "تعذرت قراءة هذا الملف. / Could not read that file."; }
 });
@@ -680,7 +714,7 @@ async function pullItems(){
     const res = await fetch(CONFIG.SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify({ key:CONFIG.SECRET, getItems:true, since:itemsStamp }) });
     const out = await res.json();
     if (!out.ok || out.unchanged || !out.items || !out.items.length || out.updatedAt <= itemsStamp) return;
-    const map = {}; out.items.forEach(r => { map[r[0]] = [r[1], r[2], r[3]]; });
+    const map = {}; out.items.forEach(r => { map[r[0]] = r[4] ? [r[1], r[2], r[3], r[4]] : [r[1], r[2], r[3]]; });
     setItems(map, out.updatedAt); saveItemsLocal(); renderAll(); showItemsInfo("from the Google Sheet");
   }catch(e){}
 }
