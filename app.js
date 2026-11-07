@@ -370,7 +370,7 @@ function restore(){ try{ const s = JSON.parse(localStorage.getItem("gqs-saved")|
 const COMPANY = {
   nameAr:"مؤسسة بدر عمر الخنبشي التجارية", addrAr:"جدة - شارع ابوبكر الصديق - الشرفية", crAr:"سجل تجاري 4030197794",
   nameEn:"Badr O. Alkhanbashi Est. for Trading", addrEn:"Jeddah, Abu Bakr as Siddiq Street", crEn:"CR 4030197794",
-  vat:"300234539600003", logo:""
+  vat:"300234539600003", logo:"logo.png"
 };
 const EXTRA = { custNo:"custNo", custVat:"custVat", custCity:"custCity", notes:"notes", custPhone:"custPhone", docNo:"docNo", validity:"validity",custAddress:"custAddress",custCommReg:"custCommReg" };
 function syncExtra(){ Object.keys(EXTRA).forEach(k => { $(EXTRA[k]).value = state.quote[k] || ""; }); }
