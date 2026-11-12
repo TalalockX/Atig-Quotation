@@ -214,7 +214,7 @@ section[aria-labelledby=h-conn] .row .f{flex:1 1 100%}
 button.linkbtn{background:transparent;cursor:pointer}button.linkbtn:hover{background:var(--accent-soft)}button.linkbtn:disabled{opacity:.45;cursor:not-allowed}
 
 /* ---- PDF: summary (totals) table with a bold, rounded outer border ---- */
-#printSheet .tot:not(.cnt){border-collapse:separate;border-spacing:0;border:2px solid #000;border-radius:6px}
+#printSheet .tot:not(.cnt){border-collapse:separate;border-spacing:0;border:1px solid #000;border-radius:6px}
 #printSheet .tot:not(.cnt) td{border:0;border-right:1px solid #000;border-bottom:1px solid #000}
 #printSheet .tot:not(.cnt) tr>:last-child{border-right:0}
 #printSheet .tot:not(.cnt) tr:last-child>td{border-bottom:0}
@@ -318,7 +318,7 @@ input:disabled{-webkit-text-fill-color:#1f262c}
 
 /* PDF: Issue Date / Doc No / VAT box - bold (2px) outer border with rounded corners, thin (1px) lines inside.
    Change "2px" for a thicker/thinner outer border, "6px" for rounder/squarer corners. */
-#printSheet .kv{border-collapse:separate;border-spacing:0;border:2px solid #000;border-radius:6px}
+#printSheet .kv{border-collapse:separate;border-spacing:0;border:1px solid #000;border-radius:6px}
 #printSheet .kv td{border:0;border-right:1px solid #000;border-bottom:1px solid #000}
 #printSheet .kv tr>:last-child{border-right:0}
 #printSheet .kv tr:last-child>td{border-bottom:0}
@@ -352,3 +352,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 
 /* printing / PDF must stay white and light even though the page itself uses color-scheme:dark */
 @media print{ :root{color-scheme:light} html{background:#fff} }
+
+/* bottom totals table (Total Excluding VAT ... Total Amount Due): regular weight text */
+#printSheet .tot:not(.cnt) td{font-weight:400!important}

@@ -460,7 +460,7 @@ function printHtml(lang){
     <td class="en" style="width:50%"><div class="big">${COMPANY.nameEn}</div><div>${COMPANY.addrEn}</div><div>${COMPANY.crEn}</div></td>
     <td class="ar" style="width:50%"><div class="big">${COMPANY.nameAr}</div><div>${COMPANY.addrAr}</div><div>${COMPANY.crAr}</div></td>
   </tr></table>
- <table style="margin:2px 0; width:100%; text-align:center;">
+ <table style="margin:2px 0 4px; width:100%; text-align:center;">
   <tr>
    <td style="width:${(remW*0.543).toFixed(3)}%; padding:0; vertical-align:bottom; text-align:center;">
 
@@ -539,8 +539,9 @@ function printHtml(lang){
 </tr>
       </thead><tbody>${rows}</tbody></table>
   <div class="foot">
-  <br>
   <table class="tot cnt"><tr><td class="en" style="width:${W.slice(0,6).reduce((s,w)=>s+parseFloat(w),0).toFixed(3)}%; font-size:10px;" >Total Quantity</td><td class="v" style="width:${W[6]}">${state.lines.reduce((s, l) => s + (+l.qty || 0), 0)}</td><td class="ar">إجمالي الكمية</td></tr></table>
+  </div>
+  <div class="foot foot2">
   <table class="tot" style="margin-top:3mm">${tot}</table>
   <div class="words${EN ? "" : " ar"}"${EN ? ' dir="ltr"' : ""}>${EN ? tafqeetEn(t.total) : tafqeet(t.total)}</div>
   <table class="notes">
