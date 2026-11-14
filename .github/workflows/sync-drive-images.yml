@@ -1,0 +1,47 @@
+name: Sync item photos from Google Drive
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-drive-images
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install rclone
+        run: curl -fsSL https://rclone.org/install.sh | sudo bash
+
+      - name: Copy new and changed photos from Drive
+        env:
+          RCLONE_CONFIG_GDRIVE_TYPE: drive
+          RCLONE_CONFIG_GDRIVE_SCOPE: drive.readonly
+          RCLONE_CONFIG_GDRIVE_SERVICE_ACCOUNT_CREDENTIALS: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_JSON }}
+          RCLONE_CONFIG_GDRIVE_ROOT_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
+        run: |
+          mkdir -p items
+          rclone copy gdrive: items \
+            --include "*.jpg" --include "*.jpeg" --include "*.png" --include "*.webp" \
+            --include "*.JPG" --include "*.JPEG" --include "*.PNG" --include "*.WEBP" \
+            --checksum -v
+
+      - name: Commit if anything changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add items
+          if git diff --cached --quiet; then
+            echo "No new or changed photos."
+          else
+            git commit -m "Sync item photos from Google Drive"
+            git push
+          fi
