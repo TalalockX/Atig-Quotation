@@ -1,11 +1,14 @@
 /* Layout: scan + sample labels on the left, live quotation on the right, sheet preview underneath. */
 :root{
-  /* ONE look for every browser: pale page, dark boxes (this was the "dark mode" look). Edit the colours here. */
+  /* ONE look for every browser: pale page, #0264aa blue boxes (panels). Edit the colours here. */
   color-scheme:dark;
-  --bg:#f4faff; --surface:#171e22; --surface-2:#171e22; --line:#bdc0f0;
-  --fg:#e6efec; --muted:#a89f94;
-  --accent:#4a81f0; --accent-fg:#06211c; --accent-soft:#17352f;
-  --warn:#4a81f0; --warn-soft:#15123a; --bad:#ff8a7a;
+  --bg:#f4faff;            /* page background, and the fill of input boxes */
+  --surface:#0264aa;       /* the blue boxes (panels, buttons at rest) */
+  --surface-2:#04579a;     /* slightly darker blue: table headings, button hover */
+  --line:#5aa5df;          /* borders on the blue boxes */
+  --fg:#ffffff; --muted:#cfe5f7;
+  --accent:#171e22; --accent-fg:#ffffff; --accent-soft:#1b7bc4;   /* highlight colour: buttons, links, stock text, focus outline */
+  --warn:#ffd9a0; --warn-soft:#6b4a00; --bad:#ffd0c7;
   --font:"IBM Plex Sans","IBM Plex Sans Arabic",system-ui,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,monospace;
 }
@@ -355,3 +358,29 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 
 /* bottom totals table (Total Excluding VAT ... Total Amount Due): regular weight text */
 #printSheet .tot:not(.cnt) td{font-weight:400!important}
+
+/* ---- blue boxes (#0264aa): danger buttons, disabled boxes ---- */
+/* Delete button: solid white with red text and border, so it is clear at rest (and still readable when disabled) */
+button.danger{background:#fff;color:#b3261e;border:2px solid #b3261e;font-weight:600}
+button.danger:hover{background:#ffeceb}
+button.danger:disabled{opacity:1;background:#dfe9f2;color:#8b5a57;border-color:#b99a98;cursor:not-allowed}
+button.solid-danger{background:#c62828;border-color:#fff;color:#fff}
+.confirm{background:var(--surface-2)}
+button:disabled{opacity:.6}
+input:disabled{background:rgba(244,250,255,.85);border-color:var(--line);-webkit-text-fill-color:#1f262c}
+
+/* ---- buttons that sit directly on the pale page (not inside a blue box) ---- */
+.top a.linkbtn{color:#0264aa;border-color:#0264aa;background:#fff;font-weight:600}
+.top a.linkbtn:hover{background:#e3f0fb}
+button.openQuote{background:#0264aa;border-color:#0264aa;color:#fff;font-weight:600}
+button.openQuote:hover{background:#04579a}
+button.openQuote:disabled{opacity:1;background:#d5e3ef;border-color:#a9c3d8;color:#4b6a84}
+.opnsheet h3{margin-top:0}
+
+/* ---- yellow buttons -> #171e22 (black) with white text ---- */
+button.primary,.applyAll{background:#171e22;border-color:#171e22;color:#fff}
+button.primary:hover,.applyAll:hover{background:#2a343a;filter:none}
+
+/* link-style buttons inside the blue boxes: same black as the other buttons, white text */
+.panel .linkbtn,.panel button.linkbtn{background:#171e22;border-color:#171e22;color:#fff}
+.panel .linkbtn:hover,.panel button.linkbtn:hover{background:#2a343a}
