@@ -29,11 +29,11 @@ jobs:
           RCLONE_CONFIG_GDRIVE_ROOT_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
         run: |
           mkdir -p items
-          rclone copy gdrive: items \
+          rclone sync gdrive: items \
             --include "*.jpg" --include "*.jpeg" --include "*.png" --include "*.webp" \
             --include "*.JPG" --include "*.JPEG" --include "*.PNG" --include "*.WEBP" \
-            --checksum -v
-
+            --checksum --max-delete 200 -v 
+            
       - name: Commit if anything changed
         run: |
           git config user.name  "github-actions[bot]"
