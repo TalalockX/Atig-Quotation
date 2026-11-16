@@ -443,7 +443,7 @@ function printHtml(lang){
       <td class="sub">${fmt(c.total)}</td><td class="nw">${fmt(c.vatAmt)}</td><td class="nw">${fmt(c.discAmt)}</td><td class="nw">${l.disc}%</td>
       <td class="nw">${fmt(c.taxable)}</td><td class="nw">${fmt(l.price)}</td><td class="nw">${l.qty}</td><td class="pic"><img class="pic" data-serial="${esc(l.serial)}" alt=""></td>
       <td class="desc" ${EN ? 'dir="ltr"' : ""}>${esc(EN ? enName(l) : (l.ar || l.en))}</td><td class="nw">${esc(l.serial)}</td><td class="nw">${i + 1}</td></tr>`; }).join("");
-  const W0 = ["10%","8.8%","9.8%","6%","9.8%","7.6%","5%","20%","11%","11%","3.2%"];   // widths, left to right: Subtotal, Tax, Discount, %, Taxable, Unit price, QTY, Picture, Description, Barcode, #  (any numbers: they are scaled to add up to 100%)
+  const W0 = ["10%","8.8%","6.8%","4.8%","9.8%","7.6%","5%","21%","10%","14.2%","3.2%"];   // widths, left to right: Subtotal, Tax, Discount, %, Taxable, Unit price, QTY, Picture, Description, Barcode, #  (any numbers: they are scaled to add up to 100%)
   const W = W0.map(w => (parseFloat(w) * 100 / W0.reduce((s, x) => s + parseFloat(x), 0)).toFixed(3) + "%");
   // The blue boxes (title + customer labels) start exactly where the Description column starts below them
   const blueW = parseFloat(W[8]) + parseFloat(W[9]) + parseFloat(W[10]);
