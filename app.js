@@ -549,7 +549,10 @@ function printHtml(lang){
       <td class="ar nt" style="width:60%;height:18mm">${esc(q.notes || "")}</td><td class="ar c" style="width:14%"><bdi>ملاحظات</bdi><br>Notes</td></tr>
     <tr><td class="ar vd" style="height:10mm">${EN ? `<span dir="ltr">This offer is valid for ( <b style="display:inline-block;min-width:7mm;text-align:center">${esc(q.validity || "")}</b> ) ${dayWordEn(q.validity)}</span>` : `العرض ساري لمدة ( <b style="display:inline-block;min-width:7mm;text-align:center">${esc(q.validity || "")}</b> ) ${dayWord(q.validity)}`}</td><td class="ar c"><bdi>صلاحية العرض</bdi><br>Validity</td></tr>
   </table></div>`;
-  return `<table class="page"><thead><tr><td>${header}</td></tr></thead><tbody><tr><td>${body}</td></tr></tbody></table>`;
+  /* The address line at the bottom of every page: normally printed through the page margin (see style.css), which phones, tablets and
+     older browsers do not support. For those, .pfoot (a fixed line) and the empty bottom row are switched on by body.pfb. */
+  const pfoot = `<div class="pfoot"><span class="en">Jeddah - Ash Sharafiyah Dist. - 6410 Abu bakr as Siddiq - Almerah Building</span>&nbsp;&nbsp;|&nbsp;&nbsp;<span class="ar">جدة - حي الشرفية - 6410 أبوبكر الصديق - مركز الميرة</span></div>`;
+  return `<table class="page"><thead><tr><td>${header}</td></tr></thead><tbody><tr><td>${body}</td></tr></tbody><tfoot><tr><td class="pfspace"></td></tr></tfoot></table>${pfoot}`;
 }
 function savePdf(lang){
   if (!state.lines.length)
@@ -559,16 +562,26 @@ function savePdf(lang){
   const tw = document.createTreeWalker($("printSheet"), NodeFilter.SHOW_TEXT), nodes = [];
   while (tw.nextNode()) nodes.push(tw.currentNode);
   nodes.forEach(n => {
-    if (!/[A-Za-z]/.test(n.nodeValue) || n.parentElement.closest(".items tbody, .v, .vn, .c, .stamp, .notes, .words")) return;
+    if (!/[A-Za-z]/.test(n.nodeValue) || n.parentElement.closest(".items tbody, .v, .vn, .c, .stamp, .notes, .words, .pfoot")) return;
     const span = document.createElement("span");
     span.innerHTML = esc(n.nodeValue).replace(/[A-Za-z(][A-Za-z0-9 .,()\-%'&]*/g, m => '<span class="nb">' + m + '</span>');
     n.replaceWith(...span.childNodes);
   });
   document.body.classList.add("pq");
+  /* Browsers that cannot print text in the page margin (Safari / iPad / iPhone, Firefox, older Chrome, Samsung Internet...) use the fixed footer instead.
+     Page margin is set to 0 so the browser's own date / web address header and footer are not printed either. */
+  const m = /\bChrome\/(\d+)/.exec(navigator.userAgent), marginBoxes = !!m && +m[1] >= 131 && !/CriOS|FxiOS|EdgiOS|OPiOS|SamsungBrowser|Android/.test(navigator.userAgent);
+  let pfbStyle = null;
+  if (!marginBoxes){
+    document.body.classList.add("pfb");
+    pfbStyle = document.createElement("style");
+    pfbStyle.textContent = "@page{size:A4 portrait;margin:0}@page quote{size:A4 portrait;margin:0}";
+    document.head.appendChild(pfbStyle);
+  }
   /* "Save as PDF" proposes the page title as the file name, so use the Doc no. while printing. */
   const oldTitle = document.title;
   document.title = tabName(state.quote).replace(/[\\\/:*?"<>|\[\]]/g, "-");
-  const done = () => { document.body.classList.remove("pq"); document.title = oldTitle; window.removeEventListener("afterprint", done); };
+  const done = () => { document.body.classList.remove("pq", "pfb"); if (pfbStyle) pfbStyle.remove(); document.title = oldTitle; window.removeEventListener("afterprint", done); };
   window.addEventListener("afterprint", done);
   /* Item pictures: items/<serial>.jpg (also .jpeg .png .webp). Missing pictures leave the space empty. */
   const exts = ["jpg","jpeg","png","webp"];

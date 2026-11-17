@@ -361,8 +361,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 
 /* ---- blue boxes (#0264aa): danger buttons, disabled boxes ---- */
 /* Delete button: solid white with red text and border, so it is clear at rest (and still readable when disabled) */
-button.danger{background:#c62828;color:#fff;border:2px solid #fff;font-weight:600}
-button.danger:hover{background:#fff;color:#c62828;border:2px solid #c62828;}
+button.danger{background:#fff;color:#b3261e;border:2px solid #b3261e;font-weight:600}
+button.danger:hover{background:#ffeceb}
 button.danger:disabled{opacity:1;background:#dfe9f2;color:#8b5a57;border-color:#b99a98;cursor:not-allowed}
 button.solid-danger{background:#c62828;border-color:#fff;color:#fff}
 .confirm{background:var(--surface-2)}
@@ -384,3 +384,14 @@ button.primary:hover,.applyAll:hover{background:#2a343a;filter:none}
 /* link-style buttons inside the blue boxes: same black as the other buttons, white text */
 .panel .linkbtn,.panel button.linkbtn{background:#171e22;border-color:#171e22;color:#fff}
 .panel .linkbtn:hover,.panel button.linkbtn:hover{background:#2a343a}
+
+/* ---- bottom address line for browsers without page-margin text (phones, tablets, Safari, older Chrome) ---- */
+#printSheet .pfspace{height:0}
+#printSheet .pfoot{display:none}
+body.pfb #printSheet{padding:0 8mm}
+body.pfb #printSheet .page>thead>tr>td{padding-top:8mm}
+body.pfb #printSheet .pfspace{height:16mm}
+body.pfb #printSheet .pfoot{display:block;position:fixed;left:0;right:0;bottom:6mm;text-align:center;white-space:nowrap;font:700 8.5px Arial,Tahoma,sans-serif;color:#404040}
+body.pfb #printSheet .pfoot .en,body.pfb #printSheet .pfoot .ar{display:inline;font-weight:700;color:#404040}
+/* fallback mode: when the totals start on a new page the company header is not repeated, so keep the same top margin there */
+body.pfb #printSheet .foot2{padding-top:8mm}
