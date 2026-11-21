@@ -583,8 +583,8 @@ function savePdf(lang){
   document.title = tabName(state.quote).replace(/[\\\/:*?"<>|\[\]]/g, "-");
   const done = () => { document.body.classList.remove("pq", "pfb"); if (pfbStyle) pfbStyle.remove(); document.title = oldTitle; window.removeEventListener("afterprint", done); };
   window.addEventListener("afterprint", done);
-  /* Item pictures: items/<serial>.jpg (also .jpeg .png .webp). Missing pictures leave the space empty. */
-  const exts = ["jpg","jpeg","png","webp"];
+  /* Item pictures: items/<serial>.jpg (also .jpeg .png .webp, in small or capital letters). Missing pictures leave the space empty. */
+  const exts = ["jpg","jpeg","png","webp","JPG","JPEG","PNG","WEBP"];  /* GitHub is case-sensitive, so capital extensions are tried too */
   const settle = im => new Promise(res => {
     let k = 0; const serial = encodeURIComponent(im.dataset.serial);
     im.onload = () => res(); 
