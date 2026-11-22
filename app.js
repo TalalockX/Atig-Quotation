@@ -83,7 +83,7 @@ function newQuote(){
   const d = new Date();
   let branch = ""; try{ branch = localStorage.getItem("gqs-branch") || ""; }catch(e){}
   state.quote = { id:"QT-" + String(n).padStart(4,"0"), customer:"", branch, custNo:"", custVat:"", custCity:"", notes:"", custPhone:"", docNo:"", validity:"",custAddress:"",custCommReg:"",
-    date:d.toISOString().slice(0,10), ...termsDefaults() };
+    date:d.toISOString().slice(0,10) };
   state.lines = [];
   $("cust").value = "";
   syncExtra();
@@ -372,18 +372,11 @@ const COMPANY = {
   nameEn:"Badr O. Alkhanbashi Est. for Trading", addrEn:"Jeddah, Abu Bakr as Siddiq Street", crEn:"CR 4030197794",
   vat:"300234539600003", logo:"logo.png"
 };
-/* "General terms & conditions" for the Abdul Latif PDF (lat.html): the four lines the user fills in. The last values typed are remembered
-   as the starting text of every new quotation. Payments and Project Warranty are fixed (see gtcHtml). */
-const DEFAULT_TERMS = { tQuote:"Price include delivery and Installation to one location - Jeddah", tValid:"One week from the date of the quotation",
-  tDeliv:"3 days after approval and receive the payments", tInst:"3-7 days from the starting working day" };
-const termsDefaults = () => { let o = {}; try{ o = JSON.parse(localStorage.getItem("gqs-terms") || "{}") || {}; }catch(e){} return { ...DEFAULT_TERMS, ...o }; };
+/* Abdul Latif PDF (lat.html): the four "general terms" boxes (Quotation / Validation / Delivery / Installation) start empty on every new quotation. */
+const TERM_KEYS = ["tQuote","tValid","tDeliv","tInst"];
 const EXTRA = { custNo:"custNo", custVat:"custVat", custCity:"custCity", notes:"notes", custPhone:"custPhone", docNo:"docNo", validity:"validity",custAddress:"custAddress",custCommReg:"custCommReg", tQuote:"tQuote", tValid:"tValid", tDeliv:"tDeliv", tInst:"tInst" };
 function syncExtra(){ Object.keys(EXTRA).forEach(k => { $(EXTRA[k]).value = state.quote[k] || ""; }); }
-Object.keys(EXTRA).forEach(k => $(EXTRA[k]).addEventListener("input", e => {
-  state.quote[k] = e.target.value;
-  if (k in DEFAULT_TERMS){ try{ const t = JSON.parse(localStorage.getItem("gqs-terms") || "{}") || {}; t[k] = e.target.value; localStorage.setItem("gqs-terms", JSON.stringify(t)); }catch(err){} }
-  queueAutosave();
-}));
+Object.keys(EXTRA).forEach(k => $(EXTRA[k]).addEventListener("input", e => { state.quote[k] = e.target.value; queueAutosave(); }));
 
 /* Arabic amount in words, riyals and halalas. */
 /* Arabic word for "day" that matches the number: 1 يوم, 2 يومان, 3-10 أيام, 11+ يوماً */
@@ -447,7 +440,7 @@ const mf = n => `<div class="mf"><span class="sym">${SAR}</span><span class="n">
 /* "GENERAL TERMS & CONDITIONS" block of the Abdul Latif PDF. Quotation / Validation / Delivery / Installation come from the boxes on lat.html;
    Payments (bank details) and Project Warranty are the same on every quotation - edit them here if they ever change. */
 function gtcHtml(q){
-  const D = termsDefaults(), v = k => esc(q[k] != null && q[k] !== "" ? q[k] : D[k]);
+  const v = k => esc(q[k] || "");
   const row = (k, val) => `<tr><td class="k">${k}</td><td class="val">${val}</td></tr>`;
   return `<div class="foot foot3"><div class="gtchd">GENERAL TERMS &amp; CONDITIONS:</div>
   <table class="gtc">
@@ -511,7 +504,7 @@ function printHtml(lang, opts = {}){
 
 
     <td class="c" style="width:${(remW*0.457).toFixed(3)}%; text-align:center; vertical-align:middle;">
-      <img src="${COMPANY.logo}" alt=""
+      <img src="${opts.terms ? "Atiglogo.jpeg" : COMPANY.logo}" alt=""
         style="display:block; margin:0 auto; width:auto; height:auto; max-width:96%; max-height:22mm">
     </td>
 
@@ -984,18 +977,7 @@ if (IS_MAIN){
   });
   window.addEventListener("load", focusScan);
 }
-const LAT = !!document.getElementById("latBtn");
-if (IS_MAIN){
-  restore();
-  /* lat.html continues with the quotation that was worked on last (saved automatically), so it shows the same quotation as the main page. */
-  const lastId = LAT ? Object.keys(state.saved).sort((x, y) => ((state.saved[y].quote || {}).savedAt || 0) - ((state.saved[x].quote || {}).savedAt || 0))[0] : null;
-  if (lastId){
-    const sv = state.saved[lastId];
-    state.quote = { ...termsDefaults(), ...sv.quote }; state.lines = sv.lines.map(l => ({...l}));
-    $("vatOn").checked = sv.vatPct !== 0;
-    $("cust").value = state.quote.customer || ""; syncExtra(); renderAll();
-  } else newQuote();
-}
+if (IS_MAIN){ restore(); newQuote(); }
 showItemsInfo(); pullItems(); showCustInfo(); pullCustomers();
 if (IS_MAIN){ armed = true; renderPreview(); }
 
