@@ -83,7 +83,7 @@ function newQuote(){
   const d = new Date();
   let branch = ""; try{ branch = localStorage.getItem("gqs-branch") || ""; }catch(e){}
   state.quote = { id:"QT-" + String(n).padStart(4,"0"), customer:"", branch, custNo:"", custVat:"", custCity:"", notes:"", custPhone:"", docNo:"", validity:"",custAddress:"",custCommReg:"",
-    date:d.toISOString().slice(0,10) };
+    date:d.toISOString().slice(0,10), ...termsDefaults() };
   state.lines = [];
   $("cust").value = "";
   syncExtra();
@@ -372,9 +372,18 @@ const COMPANY = {
   nameEn:"Badr O. Alkhanbashi Est. for Trading", addrEn:"Jeddah, Abu Bakr as Siddiq Street", crEn:"CR 4030197794",
   vat:"300234539600003", logo:"logo.png"
 };
-const EXTRA = { custNo:"custNo", custVat:"custVat", custCity:"custCity", notes:"notes", custPhone:"custPhone", docNo:"docNo", validity:"validity",custAddress:"custAddress",custCommReg:"custCommReg" };
+/* "General terms & conditions" for the Abdul Latif PDF (lat.html): the four lines the user fills in. The last values typed are remembered
+   as the starting text of every new quotation. Payments and Project Warranty are fixed (see gtcHtml). */
+const DEFAULT_TERMS = { tQuote:"Price include delivery and Installation to one location - Jeddah", tValid:"One week from the date of the quotation",
+  tDeliv:"3 days after approval and receive the payments", tInst:"3-7 days from the starting working day" };
+const termsDefaults = () => { let o = {}; try{ o = JSON.parse(localStorage.getItem("gqs-terms") || "{}") || {}; }catch(e){} return { ...DEFAULT_TERMS, ...o }; };
+const EXTRA = { custNo:"custNo", custVat:"custVat", custCity:"custCity", notes:"notes", custPhone:"custPhone", docNo:"docNo", validity:"validity",custAddress:"custAddress",custCommReg:"custCommReg", tQuote:"tQuote", tValid:"tValid", tDeliv:"tDeliv", tInst:"tInst" };
 function syncExtra(){ Object.keys(EXTRA).forEach(k => { $(EXTRA[k]).value = state.quote[k] || ""; }); }
-Object.keys(EXTRA).forEach(k => $(EXTRA[k]).addEventListener("input", e => { state.quote[k] = e.target.value; queueAutosave(); }));
+Object.keys(EXTRA).forEach(k => $(EXTRA[k]).addEventListener("input", e => {
+  state.quote[k] = e.target.value;
+  if (k in DEFAULT_TERMS){ try{ const t = JSON.parse(localStorage.getItem("gqs-terms") || "{}") || {}; t[k] = e.target.value; localStorage.setItem("gqs-terms", JSON.stringify(t)); }catch(err){} }
+  queueAutosave();
+}));
 
 /* Arabic amount in words, riyals and halalas. */
 /* Arabic word for "day" that matches the number: 1 يوم, 2 يومان, 3-10 أيام, 11+ يوماً */
@@ -435,7 +444,22 @@ const enName = l => (ITEMS[l.serial] && ITEMS[l.serial][3]) || l.en || l.ar || l
 const SAR = '<svg class="sar" viewBox="0 0 1124.14 1256.39" aria-label="SAR"><path fill="currentColor" d="M699.62,1113.02h0c-20.06,44.48-33.32,92.75-38.4,143.37l424.51-90.24c20.06-44.47,33.31-92.75,38.4-143.37l-424.51,90.24Z"/><path fill="currentColor" d="M1085.73,895.8c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.33v-135.2l292.27-62.11c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.27V66.13c-50.67,28.45-95.67,66.32-132.25,110.99v403.35l-132.25,28.11V0c-50.67,28.44-95.67,66.32-132.25,110.99v525.69l-295.91,62.88c-20.06,44.47-33.33,92.75-38.42,143.37l334.33-71.05v170.26l-358.3,76.14c-20.06,44.47-33.32,92.75-38.4,143.37l375.04-79.7c30.53-6.35,56.77-24.4,73.83-49.24l68.78-101.97v-.02c7.14-10.55,11.3-23.27,11.3-36.97v-149.98l132.25-28.11v270.4l424.53-90.28Z"/></svg>';
 const money = n => SAR + " " + fmt(n);
 const mf = n => `<div class="mf"><span class="sym">${SAR}</span><span class="n">${fmt(n)}</span></div>`;
-function printHtml(lang){
+/* "GENERAL TERMS & CONDITIONS" block of the Abdul Latif PDF. Quotation / Validation / Delivery / Installation come from the boxes on lat.html;
+   Payments (bank details) and Project Warranty are the same on every quotation - edit them here if they ever change. */
+function gtcHtml(q){
+  const D = termsDefaults(), v = k => esc(q[k] != null && q[k] !== "" ? q[k] : D[k]);
+  const row = (k, val) => `<tr><td class="k">${k}</td><td class="val">${val}</td></tr>`;
+  return `<div class="foot foot3"><div class="gtchd">GENERAL TERMS &amp; CONDITIONS:</div>
+  <table class="gtc">
+    ${row("Quotation", v("tQuote"))}
+    ${row("Validation", v("tValid"))}
+    ${row("Payments", "100% in advance after approval to our bank account as below:<br><br>Badr Omar Alkhanbashi Est. for Trading<br>Account No. 13672937000101<br>IBAN&nbsp; SA5710000013672937000101")}
+    ${row("Delivery", v("tDeliv"))}
+    ${row("Installation", v("tInst"))}
+    ${row("Project Warranty", "One year from the date of installation against any manufacturer defects")}
+  </table></div>`;
+}
+function printHtml(lang, opts = {}){
   const EN = lang === "en";   // "en" = English version, anything else = Arabic version
   const q = state.quote, t = calc(), vp = vatRate();
   const rows = state.lines.map((l, i) => { const c = lineCalc(l, vp);
@@ -548,21 +572,21 @@ function printHtml(lang){
     <tr><td rowspan="2" style="width:26%"><div style="height:30mm;overflow:hidden;text-align:center;padding-top:1mm"><img src="stamp.png" alt="" style="height:27mm;width:auto;max-width:94%;object-fit:contain"></div></td>
       <td class="ar nt" style="width:60%;height:18mm">${esc(q.notes || "")}</td><td class="ar c" style="width:14%"><bdi>ملاحظات</bdi><br>Notes</td></tr>
     <tr><td class="ar vd" style="height:10mm">${EN ? `<span dir="ltr">This offer is valid for ( <b style="display:inline-block;min-width:7mm;text-align:center">${esc(q.validity || "")}</b> ) ${dayWordEn(q.validity)}</span>` : `العرض ساري لمدة ( <b style="display:inline-block;min-width:7mm;text-align:center">${esc(q.validity || "")}</b> ) ${dayWord(q.validity)}`}</td><td class="ar c"><bdi>صلاحية العرض</bdi><br>Validity</td></tr>
-  </table></div>`;
+  </table></div>${EN && opts.terms ? gtcHtml(q) : ""}`;
   /* The address line at the bottom of every page: normally printed through the page margin (see style.css), which phones, tablets and
      older browsers do not support. For those, .pfoot (a fixed line) and the empty bottom row are switched on by body.pfb. */
   const pfoot = `<div class="pfoot"><span class="en">Jeddah - Ash Sharafiyah Dist. - 6410 Abu bakr as Siddiq - Almerah Building</span>&nbsp;&nbsp;|&nbsp;&nbsp;<span class="ar">جدة - حي الشرفية - 6410 أبوبكر الصديق - مركز الميرة</span></div>`;
   return `<table class="page"><thead><tr><td>${header}</td></tr></thead><tbody><tr><td>${body}</td></tr></tbody><tfoot><tr><td class="pfspace"></td></tr></tfoot></table>${pfoot}`;
 }
-function savePdf(lang){
+function savePdf(lang, opts){
   if (!state.lines.length)
     return toast("أضف صنفاً واحداً على الأقل.\nAdd at least one item first.");
-  $("printSheet").innerHTML = printHtml(lang);
+  $("printSheet").innerHTML = printHtml(lang, opts);
   /* Arabic stays bold; English words (labels, headings, address) are set in normal weight. Values stay bold. */
   const tw = document.createTreeWalker($("printSheet"), NodeFilter.SHOW_TEXT), nodes = [];
   while (tw.nextNode()) nodes.push(tw.currentNode);
   nodes.forEach(n => {
-    if (!/[A-Za-z]/.test(n.nodeValue) || n.parentElement.closest(".items tbody, .v, .vn, .c, .stamp, .notes, .words, .pfoot")) return;
+    if (!/[A-Za-z]/.test(n.nodeValue) || n.parentElement.closest(".items tbody, .v, .vn, .c, .stamp, .notes, .words, .pfoot, .gtc, .gtchd")) return;
     const span = document.createElement("span");
     span.innerHTML = esc(n.nodeValue).replace(/[A-Za-z(][A-Za-z0-9 .,()\-%'&]*/g, m => '<span class="nb">' + m + '</span>');
     n.replaceWith(...span.childNodes);
@@ -597,6 +621,8 @@ function savePdf(lang){
 }
 $("pdfBtn").addEventListener("click", () => savePdf("ar"));
 if ($("pdfEnBtn")) $("pdfEnBtn").addEventListener("click", () => savePdf("en"));
+/* lat.html: "عبد اللطيف PDF" = the English PDF plus the general terms & conditions */
+if (document.getElementById("latBtn")) $("latBtn").addEventListener("click", () => savePdf("en", { terms:true }));
 
 /* ---------- toast ---------- */
 let tt, tf;
@@ -958,12 +984,23 @@ if (IS_MAIN){
   });
   window.addEventListener("load", focusScan);
 }
-if (IS_MAIN){ restore(); newQuote(); }
+const LAT = !!document.getElementById("latBtn");
+if (IS_MAIN){
+  restore();
+  /* lat.html continues with the quotation that was worked on last (saved automatically), so it shows the same quotation as the main page. */
+  const lastId = LAT ? Object.keys(state.saved).sort((x, y) => ((state.saved[y].quote || {}).savedAt || 0) - ((state.saved[x].quote || {}).savedAt || 0))[0] : null;
+  if (lastId){
+    const sv = state.saved[lastId];
+    state.quote = { ...termsDefaults(), ...sv.quote }; state.lines = sv.lines.map(l => ({...l}));
+    $("vatOn").checked = sv.vatPct !== 0;
+    $("cust").value = state.quote.customer || ""; syncExtra(); renderAll();
+  } else newQuote();
+}
 showItemsInfo(); pullItems(); showCustInfo(); pullCustomers();
 if (IS_MAIN){ armed = true; renderPreview(); }
 
 /* ---------- link to the Sheet ---------- */
-const validSheetUrl = u => /^https:\/\/docs\.google\.com\/spreadsheets\/d\/[\w-]+/.test(u || "");
+function validSheetUrl(u){ return /^https:\/\/docs\.google\.com\/spreadsheets\/d\/[\w-]+/.test(u || ""); }
 function updateSheetLink(){
   const on = !!CONFIG.SCRIPT_URL || validSheetUrl(CONFIG.SHEET_URL);
   document.querySelectorAll(".openQuote").forEach(b => { b.disabled = !on; b.title = on ? "" : "اربط Google Sheet أولاً / Connect a Google Sheet first"; });

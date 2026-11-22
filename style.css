@@ -395,3 +395,16 @@ body.pfb #printSheet .pfoot{display:block;position:fixed;left:0;right:0;bottom:6
 body.pfb #printSheet .pfoot .en,body.pfb #printSheet .pfoot .ar{display:inline;font-weight:700;color:#404040}
 /* fallback mode: when the totals start on a new page the company header is not repeated, so keep the same top margin there */
 body.pfb #printSheet .foot2{padding-top:8mm}
+
+/* ---- Abdul Latif PDF: "GENERAL TERMS & CONDITIONS" block at the bottom ---- */
+#printSheet .gtchd{background:#0070c0;color:#fff;font-weight:700;font-size:12px;padding:2.2mm 6mm;margin-top:5mm;direction:ltr;text-align:left;border:1px solid #000}
+#printSheet table.gtc{margin-top:3mm;border-collapse:collapse;table-layout:fixed;width:100%}
+#printSheet .gtc td{border:1.5px solid #000;font-weight:700;font-size:10px;padding:1.3mm 2.5mm;color:#000;vertical-align:middle;line-height:1.35}
+#printSheet .gtc td.k{width:19%;text-align:center}
+#printSheet .gtc td.val{text-align:left;direction:ltr;unicode-bidi:plaintext;overflow-wrap:anywhere}
+
+/* lat.html: box of the four general-terms lines */
+.gtcbox{border-top:1px solid var(--line);margin:4px 0 14px;padding-top:12px}
+.gtcbox h3{margin:0 0 10px;font-size:13px;font-weight:600}
+.gtcbox .qhead{grid-template-columns:repeat(2,minmax(0,1fr))}
+.gtcbox .hint{margin:0}
