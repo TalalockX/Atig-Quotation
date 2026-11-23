@@ -22,7 +22,7 @@ try{ Object.assign(CONFIG, JSON.parse(localStorage.getItem("gqs-config") || "{}"
 
 /* The gallery's real items (items.js, made from the Excel): serial -> [Arabic name, selling price, stock, English description (optional)]. */
 const ITEMS = window.GQS_ITEMS || {};
-const itemBySerial = s => { const r = ITEMS[s]; return r ? { serial:s, en:r[3] || "", ar:r[0] || s, price:r[1] || 0, cur:"SAR" } : null; };
+const itemBySerial = s => { const r = ITEMS[s]; return r ? { serial:s, en:r[3] || "", ar:r[0] || s, price:r[1] || 0, sell:r[1] || 0, whole:r[4] || 0, cur:"SAR" } : null; };
 const stockOf = serial => ITEMS[serial] ? ITEMS[serial][2] : null;
 /* Units of this item on every quotation (saved or draft, never deleted ones) - the open one counted live. */
 function usedQty(serial){
@@ -157,12 +157,22 @@ function capRows(table, n){
   let h = table.tHead.offsetHeight; for (let i = 0; i < n; i++) h += rows[i].offsetHeight;
   wrap.style.maxHeight = (h + 2) + "px"; wrap.style.overflowY = "auto";
 }
+/* Two price options per item: سعر البيع (selling, the default) and سعر الجملة (wholesale). The chosen one is the line's unit price,
+   so the totals, the Excel export and both PDFs use it automatically. */
+const sellOf  = l => l.sell  != null ? l.sell  : ((ITEMS[l.serial] || [])[1] || l.price || 0);
+/* wholesale: always from the current item list first, so items added to a quotation BEFORE the list had wholesale prices get them too */
+const wholeOf = l => (ITEMS[l.serial] || [])[4] || l.whole || 0;
+function pkHtml(l){
+  const pk = l.pk === "whole" ? "whole" : "sell", sp = sellOf(l), wp = wholeOf(l);
+  const opt = (v, label, p) => `<option value="${v}"${pk === v ? " selected" : ""}${p ? "" : " disabled"}>${p ? fmt(p) : "—"}  ·  ${label}</option>`;
+  return `<select class="pksel" data-pk aria-label="خيارات السعر / Price options">${opt("sell", "سعر البيع", sp)}${opt("whole", "سعر الجملة", wp)}</select>`;
+}
 function renderLines(flashSerial){
   $("empty").hidden = state.lines.length > 0;
   $("lines").innerHTML = state.lines.map((l,i) => `
     <tr data-i="${i}" class="${l.serial===flashSerial?"flash":""}">
       <td class="item"><b dir="auto">${esc(l.ar || l.en)}</b><span class="sub"><code>${esc(l.serial)}</code>${l.en ? `<span>${esc(l.en)}</span>` : ""}</span>${stockHtml(l.serial)}</td>
-      <td class="num">${l.manualPrice ? `<div class="disc"><input type="number" inputmode="decimal" min="0" step="0.01" value="${l.price}" data-f="price" aria-label="السعر / Price"></div>` : fmt(l.price)}</td>
+      <td class="num">${l.manualPrice ? `<div class="disc"><input type="number" inputmode="decimal" min="0" step="0.01" value="${l.price}" data-f="price" aria-label="السعر / Price"></div>` : pkHtml(l)}</td>
       <td><div class="qty">
         <button type="button" data-act="dec" aria-label="إنقاص الكمية / Decrease quantity">−</button>
         <input type="number" inputmode="numeric" min="1" step="1" value="${l.qty}" data-f="qty" aria-label="الكمية / Quantity">
@@ -238,6 +248,14 @@ $("lines").addEventListener("input", e => {
   updateStock();
   renderTotals();
   queueAutosave();
+});
+$("lines").addEventListener("change", e => {
+  const r = e.target.closest("select[data-pk]"); if (!r) return;
+  const l = state.lines[+r.closest("tr").dataset.i]; if (!l) return;
+  l.pk = r.value === "whole" ? "whole" : "sell";
+  const p = l.pk === "whole" ? wholeOf(l) : sellOf(l);
+  if (p){ l.price = p; l.manualPrice = false; } else { l.price = 0; l.manualPrice = true; }
+  renderLines(); renderTotals(); updateStock(); queueAutosave();
 });
 $("lines").addEventListener("click", e => {
   const b = e.target.closest("button[data-act]"); if (!b) return;
@@ -660,13 +678,14 @@ $("pasteForm").addEventListener("submit", e => {
 
 /* ---------- update items from an Excel file (shared through the Google Sheet) ---------- */
 const ITEMS_KEY = "gqs-items";
-let itemsStamp = 0, pending = null;
+/* items.js (shipped with the page) carries its own build time. An Excel upload, or the Google Sheet list, replaces it only when it is newer. */
+let itemsStamp = window.GQS_ITEMS_STAMP || 0, pending = null;
 function setItems(map, stamp){
   Object.keys(ITEMS).forEach(k => delete ITEMS[k]); Object.assign(ITEMS, map);
   searchIndex = null; itemsStamp = stamp || 0;
 }
 function saveItemsLocal(){ try{ localStorage.setItem(ITEMS_KEY, JSON.stringify({ updatedAt:itemsStamp, items:ITEMS })); }catch(e){} }
-try{ const s = JSON.parse(localStorage.getItem(ITEMS_KEY) || "null"); if (s && s.items && Object.keys(s.items).length) setItems(s.items, s.updatedAt || 1); }catch(e){}
+try{ const s = JSON.parse(localStorage.getItem(ITEMS_KEY) || "null"); if (s && s.items && Object.keys(s.items).length && (s.updatedAt || 1) > itemsStamp) setItems(s.items, s.updatedAt || 1); }catch(e){}
 /* "last update: date // time" and "total" lines under each update box */
 function updInfoHtml(stamp, builtIn, label, n, extra){
   const d = new Date(stamp);
@@ -695,7 +714,8 @@ async function readExcel(file){
   /* Optional English description column. Accepted headings (any one): Description, English, Item English, الصنف انجليزي ... */
   const enHeads = ["description", "english", "item english", "english description", "name en", "الصنف انجليزي", "الصنف بالانجليزي", "الصنف بالإنجليزي", "الوصف بالانجليزي", "الوصف بالإنجليزي", "الوصف انجليزي"];
   let enCol = -1; rows[hi].forEach((c, i) => { if (enCol < 0 && enHeads.includes(String(c).trim().toLowerCase())) enCol = i; });
-  const map = {}; let skipped = 0, noPrice = 0, noName = 0, inStock = 0, withEn = 0;
+  const wCol = "سعر الجملة" in col ? col["سعر الجملة"] : -1;
+  const map = {}; let skipped = 0, noPrice = 0, noName = 0, inStock = 0, withEn = 0, withWhole = 0;
   rows.slice(hi + 1).forEach(r => {
     const s = String(r[col["الباركود"]]).trim();
     if (!s) { skipped++; return; }
@@ -704,14 +724,16 @@ async function readExcel(file){
     let en = enCol >= 0 ? String(r[enCol] == null ? "" : r[enCol]).trim() : "";
     if (/^[#=]/.test(en) || /[\u0600-\u06FF]/.test(en)) en = "";   // formula errors (#ERROR!) or text that is still Arabic are ignored
     if (en) withEn++;
-    map[s] = en ? [name, price, qty, en] : [name, price, qty];
+    const whole = wCol >= 0 ? Math.round(toNum(r[wCol]) * 100) / 100 : 0;
+    if (whole > 0) withWhole++;
+    map[s] = whole > 0 ? [name, price, qty, en, whole] : en ? [name, price, qty, en] : [name, price, qty];
   });
   const count = Object.keys(map).length;
   if (!count) throw new Error("لا توجد أصناف في هذا الملف. / No items found in that file.");
-  return { map, count, skipped, noPrice, noName, inStock, withEn, hasEnCol: enCol >= 0 };
+  return { map, count, skipped, noPrice, noName, inStock, withEn, withWhole, hasEnCol: enCol >= 0 };
 }
 async function pushItems(map){
-  const items = Object.keys(map).map(s => [s, map[s][0], map[s][1], map[s][2], map[s][3] || ""]);
+  const items = Object.keys(map).map(s => [s, map[s][0], map[s][1], map[s][2], map[s][3] || "", map[s][4] || 0]);
   const res = await fetch(CONFIG.SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify({ key:CONFIG.SECRET, putItems:true, items }) });
   const out = await res.json();
   if (!out.ok) throw new Error(out.error === "Bad quote id" ? "Your Apps Script is out of date. Paste the new Code.gs and deploy a New version." : out.error);
@@ -724,14 +746,16 @@ $("itemsFile").addEventListener("change", async e => {
   try{
     pending = await readExcel(f);
     const p = pending;
-    $("itemsMsg").textContent = p.count + " items found (" + p.inStock + " in stock" + (p.hasEnCol ? ", " + p.withEn + " with an English description" : ", no English description column found")  + (p.noPrice ? ", " + p.noPrice + " without a price" : "") + (p.noName ? ", " + p.noName + " without a name" : "") + (p.skipped ? "; " + p.skipped + " rows without a barcode skipped" : "") + "). This replaces the current list. Apply?";
+    $("itemsMsg").textContent = p.count + " items found (" + p.inStock + " in stock" + (p.hasEnCol ? ", " + p.withEn + " with an English description" : ", no English description column found") + ", " + p.withWhole + " with a wholesale price (سعر الجملة)"  + (p.noPrice ? ", " + p.noPrice + " without a price" : "") + (p.noName ? ", " + p.noName + " without a name" : "") + (p.skipped ? "; " + p.skipped + " rows without a barcode skipped" : "") + "). This replaces the current list. Apply?";
     $("itemsApply").hidden = $("itemsCancel").hidden = false;
   }catch(err){ $("itemsMsg").textContent = err.message || "تعذرت قراءة هذا الملف. / Could not read that file."; }
 });
 $("itemsCancel").onclick = () => { pending = null; $("itemsApply").hidden = $("itemsCancel").hidden = true; $("itemsMsg").textContent = "تم الإلغاء. لم تتغير قائمة الأصناف. / Cancelled. The item list was not changed."; };
 $("itemsApply").onclick = async () => {
   if (!pending) return;
-  const map = pending.map; pending = null; $("itemsApply").hidden = $("itemsCancel").hidden = true;
+  const map = pending.map, hadEn = pending.hasEnCol; pending = null; $("itemsApply").hidden = $("itemsCancel").hidden = true;
+  /* a file without an English column must not wipe the English descriptions the list already has */
+  if (!hadEn) Object.keys(map).forEach(k => { const old = ITEMS[k]; if (old && old[3] && !map[k][3]) map[k] = [map[k][0], map[k][1], map[k][2], old[3]].concat(map[k][4] ? [map[k][4]] : []); });
   setItems(map, Date.now()); saveItemsLocal(); renderLines(); showItemsInfo();
   if (!CONFIG.SCRIPT_URL){ $("itemsMsg").textContent = "تم تحديث قائمة الأصناف على هذا الجهاز. اربط Google Sheet لمشاركتها مع الأجهزة الأخرى. / Item list updated on this tablet. Connect the Google Sheet to share it."; return; }
   $("itemsMsg").textContent = "تم التحديث هنا. جارٍ المشاركة مع الأجهزة الأخرى… / Updated here. Sharing with the other tablets…";
@@ -747,7 +771,11 @@ async function pullItems(){
     const res = await fetch(CONFIG.SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify({ key:CONFIG.SECRET, getItems:true, since:itemsStamp }) });
     const out = await res.json();
     if (!out.ok || out.unchanged || !out.items || !out.items.length || out.updatedAt <= itemsStamp) return;
-    const map = {}; out.items.forEach(r => { map[r[0]] = r[4] ? [r[1], r[2], r[3], r[4]] : [r[1], r[2], r[3]]; });
+    /* Rows from an older Apps Script have no wholesale column: keep the wholesale price this device already has. */
+      const map = {}; out.items.forEach(r => {
+        const w = r.length > 5 ? (Number(r[5]) || 0) : (((ITEMS[r[0]] || [])[4]) || 0);
+        map[r[0]] = w ? [r[1], r[2], r[3], r[4] || "", w] : r[4] ? [r[1], r[2], r[3], r[4]] : [r[1], r[2], r[3]];
+      });
     setItems(map, out.updatedAt); saveItemsLocal(); renderAll(); showItemsInfo("from the Google Sheet");
   }catch(e){}
 }
