@@ -422,3 +422,9 @@ body.pfb #printSheet .foot2{padding-top:8mm}
 
 /* price column: a drop-down with the two price options (selling price is the default) */
 .pksel{min-height:38px;min-width:165px;width:100%;padding:0 8px;font-weight:600;font-variant-numeric:tabular-nums;color:#1f262c}
+
+/* notes box + tender price */
+textarea#notes{width:100%;min-height:74px;resize:vertical;font:inherit;line-height:1.5;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:#fff;color:#1f262c}
+.pkman{margin-top:6px}
+#printSheet .notes td.nt .bl{display:block;position:relative;padding-right:3.5mm;line-height:1.35}
+#printSheet .notes td.nt .bl::before{content:"•";position:absolute;right:0;top:0}

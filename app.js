@@ -163,16 +163,16 @@ const sellOf  = l => l.sell  != null ? l.sell  : ((ITEMS[l.serial] || [])[1] || 
 /* wholesale: always from the current item list first, so items added to a quotation BEFORE the list had wholesale prices get them too */
 const wholeOf = l => (ITEMS[l.serial] || [])[4] || l.whole || 0;
 function pkHtml(l){
-  const pk = l.pk === "whole" ? "whole" : "sell", sp = sellOf(l), wp = wholeOf(l);
+  const pk = l.pk === "whole" ? "whole" : l.pk === "tender" ? "tender" : "sell", sp = sellOf(l), wp = wholeOf(l);
   const opt = (v, label, p) => `<option value="${v}"${pk === v ? " selected" : ""}${p ? "" : " disabled"}>${p ? fmt(p) : "—"}  ·  ${label}</option>`;
-  return `<select class="pksel" data-pk aria-label="خيارات السعر / Price options">${opt("sell", "سعر البيع", sp)}${opt("whole", "سعر الجملة", wp)}</select>`;
+  return `<select class="pksel" data-pk aria-label="خيارات السعر / Price options">${opt("sell", "سعر البيع", sp)}${opt("whole", "سعر الجملة", wp)}<option value="tender"${pk === "tender" ? " selected" : ""}>${l.tender ? fmt(l.tender) : "يدوي"}  ·  سعر المناقصة</option></select>`;
 }
 function renderLines(flashSerial){
   $("empty").hidden = state.lines.length > 0;
   $("lines").innerHTML = state.lines.map((l,i) => `
     <tr data-i="${i}" class="${l.serial===flashSerial?"flash":""}">
       <td class="item"><b dir="auto">${esc(l.ar || l.en)}</b><span class="sub"><code>${esc(l.serial)}</code>${l.en ? `<span>${esc(l.en)}</span>` : ""}</span>${stockHtml(l.serial)}</td>
-      <td class="num">${l.manualPrice ? `<div class="disc"><input type="number" inputmode="decimal" min="0" step="0.01" value="${l.price}" data-f="price" aria-label="السعر / Price"></div>` : pkHtml(l)}</td>
+      <td class="num">${pkHtml(l)}${l.manualPrice || l.pk === "tender" ? `<div class="disc pkman"><input type="number" inputmode="decimal" min="0" step="0.01" value="${l.price || ""}" placeholder="0.00" data-f="price" aria-label="السعر / Price"></div>` : ""}</td>
       <td><div class="qty">
         <button type="button" data-act="dec" aria-label="إنقاص الكمية / Decrease quantity">−</button>
         <input type="number" inputmode="numeric" min="1" step="1" value="${l.qty}" data-f="qty" aria-label="الكمية / Quantity">
@@ -241,7 +241,7 @@ $("lines").addEventListener("input", e => {
   const l = state.lines[+tr.dataset.i], f = e.target.dataset.f;
   let v = parseFloat(e.target.value);
   if (f === "qty") l.qty = isFinite(v) && v >= 1 ? Math.floor(v) : 1;
-  else if (f === "price") l.price = isFinite(v) && v >= 0 ? r2(v) : 0;
+  else if (f === "price"){ l.price = isFinite(v) && v >= 0 ? r2(v) : 0; if (l.pk === "tender") l.tender = l.price; }
   else l.disc = isFinite(v) ? Math.min(100, Math.max(0, v)) : 0;
   tr.querySelector("[data-total]").textContent = fmt(lineTotal(l));
   if (f === "disc"){ const ab = tr.querySelector(".applyAll"); if (ab) ab.hidden = !(+tr.dataset.i < state.lines.length - 1); }
@@ -252,10 +252,11 @@ $("lines").addEventListener("input", e => {
 $("lines").addEventListener("change", e => {
   const r = e.target.closest("select[data-pk]"); if (!r) return;
   const l = state.lines[+r.closest("tr").dataset.i]; if (!l) return;
-  l.pk = r.value === "whole" ? "whole" : "sell";
-  const p = l.pk === "whole" ? wholeOf(l) : sellOf(l);
-  if (p){ l.price = p; l.manualPrice = false; } else { l.price = 0; l.manualPrice = true; }
+  l.pk = r.value === "whole" ? "whole" : r.value === "tender" ? "tender" : "sell";
+  if (l.pk === "tender"){ l.price = l.tender || 0; l.manualPrice = true; }          // سعر المناقصة: typed by the user
+  else { const p = l.pk === "whole" ? wholeOf(l) : sellOf(l); if (p){ l.price = p; l.manualPrice = false; } else { l.price = 0; l.manualPrice = true; } }
   renderLines(); renderTotals(); updateStock(); queueAutosave();
+  if (l.pk === "tender"){ const inp = $("lines").querySelector(`tr[data-i="${r.closest("tr").dataset.i}"] input[data-f="price"]`); if (inp) inp.focus(); }
 });
 $("lines").addEventListener("click", e => {
   const b = e.target.closest("button[data-act]"); if (!b) return;
@@ -395,6 +396,27 @@ const TERM_KEYS = ["tQuote","tValid","tDeliv","tInst"];
 const EXTRA = { custNo:"custNo", custVat:"custVat", custCity:"custCity", notes:"notes", custPhone:"custPhone", docNo:"docNo", validity:"validity",custAddress:"custAddress",custCommReg:"custCommReg", tQuote:"tQuote", tValid:"tValid", tDeliv:"tDeliv", tInst:"tInst" };
 function syncExtra(){ Object.keys(EXTRA).forEach(k => { $(EXTRA[k]).value = state.quote[k] || ""; }); }
 Object.keys(EXTRA).forEach(k => $(EXTRA[k]).addEventListener("input", e => { state.quote[k] = e.target.value; queueAutosave(); }));
+
+/* Notes: one bullet per line. Enter in the box starts a new bullet; the PDFs print each line as a bullet. */
+const noteLines = t => String(t || "").split(/\r?\n/).map(x => x.replace(/^\s*[•\-*]\s*/, "").trim()).filter(Boolean);
+const notesHtml = t => noteLines(t).map(x => `<div class="bl">${esc(x)}</div>`).join("");
+(function(){
+  const ta = $("notes"); if (!ta || !ta.addEventListener) return;
+  const B = "• ";
+  ta.addEventListener("focus", () => { if (!ta.value.trim()){ ta.value = B; state.quote.notes = ta.value; } });
+  ta.addEventListener("blur", () => { if (ta.value.trim() === "•"){ ta.value = ""; state.quote.notes = ""; queueAutosave(); } });
+  ta.addEventListener("keydown", e => {
+    if (e.key !== "Enter" || e.shiftKey || e.isComposing) return;
+    e.preventDefault();
+    const v = ta.value, a = ta.selectionStart, b = ta.selectionEnd, ls = v.lastIndexOf("\n", a - 1) + 1;
+    if (v.slice(ls, a).trim() === "•" && a === b && v.slice(a).split("\n")[0] === ""){      // Enter on an empty bullet removes it
+      ta.value = v.slice(0, ls).replace(/\n$/, "") + v.slice(a); ta.selectionStart = ta.selectionEnd = ta.value.length;
+    } else {
+      ta.value = v.slice(0, a) + "\n" + B + v.slice(b); ta.selectionStart = ta.selectionEnd = a + 1 + B.length;
+    }
+    state.quote.notes = ta.value; queueAutosave();
+  });
+})();
 
 /* Arabic amount in words, riyals and halalas. */
 /* Arabic word for "day" that matches the number: 1 يوم, 2 يومان, 3-10 أيام, 11+ يوماً */
@@ -581,7 +603,7 @@ function printHtml(lang, opts = {}){
   <div class="words${EN ? "" : " ar"}"${EN ? ' dir="ltr"' : ""}>${EN ? tafqeetEn(t.total) : tafqeet(t.total)}</div>
   <table class="notes">
     <tr><td rowspan="2" style="width:26%"><div style="height:30mm;overflow:hidden;text-align:center;padding-top:1mm"><img src="stamp.png" alt="" style="height:27mm;width:auto;max-width:94%;object-fit:contain"></div></td>
-      <td class="ar nt" style="width:60%;height:18mm">${esc(q.notes || "")}</td><td class="ar c" style="width:14%"><bdi>ملاحظات</bdi><br>Notes</td></tr>
+      <td class="ar nt" style="width:60%;height:18mm">${notesHtml(q.notes)}</td><td class="ar c" style="width:14%"><bdi>ملاحظات</bdi><br>Notes</td></tr>
     <tr><td class="ar vd" style="height:10mm">${EN ? `<span dir="ltr">This offer is valid for ( <b style="display:inline-block;min-width:7mm;text-align:center">${esc(q.validity || "")}</b> ) ${dayWordEn(q.validity)}</span>` : `العرض ساري لمدة ( <b style="display:inline-block;min-width:7mm;text-align:center">${esc(q.validity || "")}</b> ) ${dayWord(q.validity)}`}</td><td class="ar c"><bdi>صلاحية العرض</bdi><br>Validity</td></tr>
   </table></div>${EN && opts.terms ? gtcHtml(q) : ""}`;
   /* The address line at the bottom of every page: normally printed through the page margin (see style.css), which phones, tablets and
