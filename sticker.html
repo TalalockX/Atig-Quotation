@@ -8,13 +8,13 @@
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="stylesheet" href="style.css">
 <style>
-/* ---- the sticker sheet: same page size and grid as the sample PDF (595.44 x 864 pt, 2 columns x 5 rows, 10 stickers) ---- */
+/* ---- the sticker sheet: page 210 x 304.8 mm, 10 label slots of 105 x 57 mm (2 columns x 5 rows); each sticker is 100 x 50 mm, centred in its slot ---- */
 #sheetBox{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;overflow:hidden}
-#sheetScale{transform-origin:top left;width:595.44pt}
-.spage{position:relative;width:595.44pt;height:864pt;background:#fff;color:#000;overflow:hidden;box-sizing:border-box;margin-bottom:14pt;box-shadow:0 0 0 1px #c8d6e2}
-.stk{position:absolute;width:261pt;height:148pt;box-sizing:border-box;border-radius:21pt;display:flex;direction:rtl;align-items:center;justify-content:flex-start;padding-right:6pt;overflow:hidden}
-.stk>svg{position:absolute;left:0;top:0;width:261pt;height:148pt;pointer-events:none}
-.stk .c{flex:none;writing-mode:vertical-rl;text-orientation:mixed;text-align:center;font-weight:700;color:#000;height:136pt;box-sizing:content-box;white-space:normal;overflow-wrap:anywhere}
+#sheetScale{transform-origin:top left;width:210mm}
+.spage{position:relative;width:210mm;height:304.8mm;background:#fff;color:#000;overflow:hidden;box-sizing:border-box;margin-bottom:14pt;box-shadow:0 0 0 1px #c8d6e2}
+.stk{position:absolute;width:100mm;height:50mm;box-sizing:border-box;border-radius:20pt;display:flex;direction:rtl;align-items:center;justify-content:center;overflow:hidden}
+.stk>svg{position:absolute;left:0;top:0;width:100mm;height:50mm;pointer-events:none}
+.stk .c{flex:none;writing-mode:vertical-rl;text-orientation:mixed;text-align:center;font-weight:700;color:#000;height:132pt;box-sizing:content-box;white-space:normal;overflow-wrap:anywhere}
 .stk .ar{direction:rtl;unicode-bidi:plaintext;font-family:Arial,"Liberation Sans","Helvetica Neue",sans-serif}
 .stk .nm{direction:ltr;font-family:Calibri,Carlito,Arial,"Liberation Sans",sans-serif}
 .stk .city{font-size:22pt;line-height:45pt;min-width:45pt}
@@ -29,13 +29,13 @@
 @media (max-width:900px){.sgrid{grid-template-columns:minmax(0,1fr)}}
 .sgrid .row{display:grid;gap:10px}
 .sgrid h3{margin:14px 0 2px;font-size:13px;color:var(--muted);font-weight:600}
-@page{size:595.44pt 864pt;margin:0}
+@page{size:210mm 304.8mm;margin:0}
 @media print{
   html,body{background:#fff!important;margin:0!important;padding:0!important}
   .wrap > :not(.sgrid),.sgrid > .panel{display:none!important}
   .wrap,.sgrid{display:block!important;margin:0!important;padding:0!important;max-width:none!important}
   #sheetBox{height:auto!important;border:0!important;padding:0!important;border-radius:0!important;overflow:visible!important}
-  #sheetScale{transform:none!important;width:595.44pt!important}
+  #sheetScale{transform:none!important;width:210mm!important}
   .spage{margin:0!important;box-shadow:none!important;page-break-after:always;break-after:page}
   .spage:last-child{page-break-after:auto;break-after:auto}
   .ph{color:#000!important}
@@ -66,7 +66,7 @@
       <div class="actions">
         <button class="primary" id="printBtn" type="button">طباعة الملصقات / Print stickers</button>
       </div>
-      <p class="hint">الصفحة ١٠ ملصقات بنفس مقاس ملف PDF (595 × 864 نقطة). عند الطباعة اختر «الحجم الفعلي / Actual size» وبدون هوامش.<br>Each page holds 10 stickers, same page size as the sample PDF. In the print dialog choose "Actual size" / 100% and no margins.</p>
+      <p class="hint">الصفحة ١٠ ملصقات، كل ملصق ١٠ × ٥ سم داخل خانة ١٠٫٥ × ٥٫٧ سم (حجم الصفحة ٢١ × ٣٠٫٤٨ سم). عند الطباعة اختر «الحجم الفعلي / Actual size» وبدون هوامش.<br>Each page holds 10 stickers, each 10 × 5 cm inside a 10.5 × 5.7 cm label slot (page 21 × 30.48 cm). In the print dialog choose "Actual size" / 100% and no margins.</p>
     </section>
     <section aria-label="Preview">
       <div id="sheetBox"><div id="sheetScale"><div id="sheet"></div></div></div>
@@ -86,9 +86,9 @@
   catch (e) { Object.keys(DEF).forEach(k => { $(F[k]).value = DEF[k]; }); }
   const save = () => { try { const o = {}; Object.keys(F).forEach(k => o[k] = $(F[k]).value); localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} };
 
-  /* grid measured from the sample PDF: boxes 261 x 148 pt, columns 25.2 / 309.2 pt, rows from 35 pt, pitch 161.5 pt */
-  const COLX = [309.2, 25.2], ROWY = i => 35 + 161.5 * i;
-  const BORDER = '<svg viewBox="0 0 261 148" aria-hidden="true"><rect x="0.6" y="0.6" width="259.8" height="146.8" rx="21" ry="21" fill="none" stroke="#000" stroke-width="1.1" stroke-dasharray="7.2 4"/></svg>';
+  /* label sheet: slots 105 x 57 mm, 2 x 5 = 210 x 285 mm, centred on the 304.8 mm page (9.9 mm top); the 100 x 50 mm sticker sits in the middle of its slot */
+  const COLX = [107.5, 2.5], ROWY = i => 9.9 + 57 * i + 3.5;
+  const BORDER = '<svg viewBox="0 0 283.46 141.73" aria-hidden="true"><rect x="0.6" y="0.6" width="282.26" height="140.53" rx="20" ry="20" fill="none" stroke="#000" stroke-width="1.1" stroke-dasharray="7.2 4"/></svg>';
   const FRAG = "قابل للكســــر";
 
   function sticker(v, i){
@@ -96,8 +96,8 @@
     const t = (k, cls, extra) => `<div class="c ${cls}${extra || ""}${v[k + "_ph"] ? " ph" : ""}">${esc(v[k])}</div>`;
     const sender = v.sComp
       ? `<div class="c ar from">من : ${esc(v.sComp)}<br>${esc(v.sName)}</div>`
-      : `<div class="c ar from">من :<br> ${esc(v.sName)}</div>`;
-    return `<div class="stk" style="left:${x}pt;top:${y}pt">`
+      : `<div class="c ar from">من : <br>${esc(v.sName)}</div>`;
+    return `<div class="stk" style="left:${x}mm;top:${y}mm">`
       + BORDER
       + t("city", "ar city") + t("comp", "ar comp") + t("tel", "nm tel")
       + `<div class="c ar frag"><span>${FRAG}</span></div>`
@@ -129,12 +129,12 @@
     }
     $("sheet").innerHTML = html;
     /* the red "قابل للكسر" line must stay inside the sticker whatever font the device uses for Arabic */
-    $("sheet").querySelectorAll(".frag").forEach(el => { const sp = el.firstChild; let fs = 29.33; while (sp.getBoundingClientRect().height > el.getBoundingClientRect().height * 0.9 && fs > 14){ fs -= 0.5; el.style.fontSize = fs + "pt"; } });
+    $("sheet").querySelectorAll(".frag").forEach(el => { const sp = el.firstChild; let fs = 29.33; while (sp.getBoundingClientRect().height > el.getBoundingClientRect().height * 0.93 && fs > 14){ fs -= 0.5; el.style.fontSize = fs + "pt"; } });
     /* long names wrap into extra lines (extra columns): shrink them until everything stays inside the sticker */
     $("sheet").querySelectorAll(".stk").forEach(st => {
       const order = [[".from", 10], [".comp", 11], [".city", 13]];
       for (let guard = 0; guard < 40; guard++){
-        const sr = st.getBoundingClientRect(), k = sr.width / (261 * 96 / 72), last = st.lastElementChild.getBoundingClientRect();
+        const sr = st.getBoundingClientRect(), k = sr.width / (100 / 25.4 * 96), last = st.lastElementChild.getBoundingClientRect();
         if (last.left >= sr.left + 7 * 96 / 72 * k) break;
         let changed = false;
         for (const [sel, min] of order){
@@ -153,10 +153,10 @@
   function fit(){
     const box = $("sheetBox"), sc = $("sheetScale");
     if (window.matchMedia && window.matchMedia("print").matches) return;
-    const w = 595.44 * 96 / 72, avail = box.clientWidth - 24;
+    const w = 210 / 25.4 * 96, avail = box.clientWidth - 24;
     const k = Math.min(1, avail / w);
     sc.style.transform = "scale(" + k + ")";
-    sc.style.width = "595.44pt";
+    sc.style.width = "210mm";
     const h = $("sheet").offsetHeight;
     box.style.height = (h * k + 24) + "px";
   }
