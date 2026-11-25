@@ -12,6 +12,7 @@
   --font:"IBM Plex Sans","IBM Plex Sans Arabic",system-ui,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,monospace;
 }
+
 [hidden]{display:none!important}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 var(--font);
@@ -428,3 +429,4 @@ textarea#notes{width:100%;min-height:74px;resize:vertical;font:inherit;line-heig
 .pkman{margin-top:6px}
 #printSheet .notes td.nt .bl{display:block;position:relative;padding-right:3.5mm;line-height:1.35}
 #printSheet .notes td.nt .bl::before{content:"•";position:absolute;right:0;top:0}
+

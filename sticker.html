@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="ar">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Atig Stickers</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="stylesheet" href="style.css">
+<style>
+/* ---- the sticker sheet: same page size and grid as the sample PDF (595.44 x 864 pt, 2 columns x 5 rows, 10 stickers) ---- */
+#sheetBox{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;overflow:hidden}
+#sheetScale{transform-origin:top left;width:595.44pt}
+.spage{position:relative;width:595.44pt;height:864pt;background:#fff;color:#000;overflow:hidden;box-sizing:border-box;margin-bottom:14pt;box-shadow:0 0 0 1px #c8d6e2}
+.stk{position:absolute;width:261pt;height:148pt;box-sizing:border-box;border-radius:21pt;display:flex;direction:rtl;align-items:center;justify-content:flex-start;padding-right:6pt;overflow:hidden}
+.stk>svg{position:absolute;left:0;top:0;width:261pt;height:148pt;pointer-events:none}
+.stk .c{flex:none;writing-mode:vertical-rl;text-orientation:mixed;text-align:center;font-weight:700;color:#000;height:136pt;box-sizing:content-box;white-space:normal;overflow-wrap:anywhere}
+.stk .ar{direction:rtl;unicode-bidi:plaintext;font-family:Arial,"Liberation Sans","Helvetica Neue",sans-serif}
+.stk .nm{direction:ltr;font-family:Calibri,Carlito,Arial,"Liberation Sans",sans-serif}
+.stk .city{font-size:22pt;line-height:45pt;min-width:45pt}
+.stk .comp{font-size:18pt;line-height:28pt;min-width:28pt}
+.stk .tel{font-size:20pt;line-height:26pt;min-width:26pt}
+.stk .frag{font-size:29.33pt;line-height:59pt;min-width:59pt;color:#f00;white-space:nowrap}
+.stk .from{font-size:15.3pt;line-height:21pt;min-width:21pt;padding:0 3.3pt}
+.stk .tel2{font-size:22pt;line-height:21pt;min-width:21pt}
+.ph{color:#9aa7b2!important}
+/* ---- form ---- */
+.sgrid{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:900px){.sgrid{grid-template-columns:minmax(0,1fr)}}
+.sgrid .row{display:grid;gap:10px}
+.sgrid h3{margin:14px 0 2px;font-size:13px;color:var(--muted);font-weight:600}
+@page{size:595.44pt 864pt;margin:0}
+@media print{
+  html,body{background:#fff!important;margin:0!important;padding:0!important}
+  .wrap > :not(.sgrid),.sgrid > .panel{display:none!important}
+  .wrap,.sgrid{display:block!important;margin:0!important;padding:0!important;max-width:none!important}
+  #sheetBox{height:auto!important;border:0!important;padding:0!important;border-radius:0!important;overflow:visible!important}
+  #sheetScale{transform:none!important;width:595.44pt!important}
+  .spage{margin:0!important;box-shadow:none!important;page-break-after:always;break-after:page}
+  .spage:last-child{page-break-after:auto;break-after:auto}
+  .ph{color:#000!important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>ملصقات الشحن / Shipping stickers</h1>
+    <p><a class="linkbtn" href="index.html">← العودة لعروض الاسعار</a></p>
+  </div>
+  <div class="sgrid">
+    <section class="panel" aria-labelledby="h-st">
+      <h2 id="h-st">بيانات الملصق / STICKER DETAILS</h2>
+      <div class="row">
+        <h3>العميل / Customer</h3>
+        <label class="f">المدينة / City<input id="fCity" autocomplete="off"></label>
+        <label class="f">الشركة / Company<input id="fComp" autocomplete="off"></label>
+        <label class="f">رقم جوال العميل / Customer mobile<input id="fTel" inputmode="tel" autocomplete="off"></label>
+        <h3>المورد / Supplier  (من)</h3>
+        <label class="f">اسم شركة المورد / Supplier company<input id="fSComp" autocomplete="off"></label>
+        <label class="f">اسم المورد / Supplier name<input id="fSName" autocomplete="off"></label>
+        <label class="f">رقم المورد / Supplier number<input id="fSTel" inputmode="tel" autocomplete="off"></label>
+        <h3>الطباعة / Print</h3>
+        <label class="f">عدد الملصقات / Number of stickers (10 per page)<input id="fCount" type="number" min="1" max="500" step="1" value="10" inputmode="numeric"></label>
+      </div>
+      <div class="actions">
+        <button class="primary" id="printBtn" type="button">طباعة الملصقات / Print stickers</button>
+      </div>
+      <p class="hint">الصفحة ١٠ ملصقات بنفس مقاس ملف PDF (595 × 864 نقطة). عند الطباعة اختر «الحجم الفعلي / Actual size» وبدون هوامش.<br>Each page holds 10 stickers, same page size as the sample PDF. In the print dialog choose "Actual size" / 100% and no margins.</p>
+    </section>
+    <section aria-label="Preview">
+      <div id="sheetBox"><div id="sheetScale"><div id="sheet"></div></div></div>
+    </section>
+  </div>
+</div>
+<script>
+(function(){
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+  const KEY = "gqs-sticker";
+  const F = { city:"fCity", comp:"fComp", tel:"fTel", sComp:"fSComp", sName:"fSName", sTel:"fSTel" };
+  /* all boxes start blank; what you type is remembered on this device */
+  const DEF = {};
+  try { const s = JSON.parse(localStorage.getItem(KEY) || "null"); if (s) Object.keys(F).forEach(k => { if (typeof s[k] === "string") $(F[k]).value = s[k]; }); else Object.keys(DEF).forEach(k => { $(F[k]).value = DEF[k]; }); }
+  catch (e) { Object.keys(DEF).forEach(k => { $(F[k]).value = DEF[k]; }); }
+  const save = () => { try { const o = {}; Object.keys(F).forEach(k => o[k] = $(F[k]).value); localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} };
+
+  /* grid measured from the sample PDF: boxes 261 x 148 pt, columns 25.2 / 309.2 pt, rows from 35 pt, pitch 161.5 pt */
+  const COLX = [309.2, 25.2], ROWY = i => 35 + 161.5 * i;
+  const BORDER = '<svg viewBox="0 0 261 148" aria-hidden="true"><rect x="0.6" y="0.6" width="259.8" height="146.8" rx="21" ry="21" fill="none" stroke="#000" stroke-width="1.1" stroke-dasharray="7.2 4"/></svg>';
+  const FRAG = "قابل للكســــر";
+
+  function sticker(v, i){
+    const x = COLX[i % 2], y = ROWY(Math.floor(i / 2) % 5);
+    const t = (k, cls, extra) => `<div class="c ${cls}${extra || ""}${v[k + "_ph"] ? " ph" : ""}">${esc(v[k])}</div>`;
+    const sender = v.sComp
+      ? `<div class="c ar from">من : ${esc(v.sComp)}<br>${esc(v.sName)}</div>`
+      : `<div class="c ar from">من :<br> ${esc(v.sName)}</div>`;
+    return `<div class="stk" style="left:${x}pt;top:${y}pt">`
+      + BORDER
+      + t("city", "ar city") + t("comp", "ar comp") + t("tel", "nm tel")
+      + `<div class="c ar frag"><span>${FRAG}</span></div>`
+      + sender
+      + t("sTel", "nm tel2")
+      + `</div>`;
+  }
+
+  function values(forPrint){
+    const v = {};
+    Object.keys(F).forEach(k => {
+      const el = $(F[k]); let s = el.value.trim();
+      v[k + "_ph"] = false;
+      v[k] = s;
+    });
+    return v;
+  }
+
+  function render(forPrint){
+    const v = values(forPrint);
+    const n = Math.max(1, Math.min(500, parseInt($("fCount").value, 10) || 10));
+    const pages = Math.ceil(n / 10);
+    let html = "";
+    for (let p = 0; p < pages; p++){
+      const cnt = Math.min(10, n - p * 10);
+      let s = "";
+      for (let i = 0; i < cnt; i++) s += sticker(v, i);
+      html += `<div class="spage">${s}</div>`;
+    }
+    $("sheet").innerHTML = html;
+    /* the red "قابل للكسر" line must stay inside the sticker whatever font the device uses for Arabic */
+    $("sheet").querySelectorAll(".frag").forEach(el => { const sp = el.firstChild; let fs = 29.33; while (sp.getBoundingClientRect().height > el.getBoundingClientRect().height * 0.9 && fs > 14){ fs -= 0.5; el.style.fontSize = fs + "pt"; } });
+    /* long names wrap into extra lines (extra columns): shrink them until everything stays inside the sticker */
+    $("sheet").querySelectorAll(".stk").forEach(st => {
+      const order = [[".from", 10], [".comp", 11], [".city", 13]];
+      for (let guard = 0; guard < 40; guard++){
+        const sr = st.getBoundingClientRect(), k = sr.width / (261 * 96 / 72), last = st.lastElementChild.getBoundingClientRect();
+        if (last.left >= sr.left + 7 * 96 / 72 * k) break;
+        let changed = false;
+        for (const [sel, min] of order){
+          const el = st.querySelector(sel); if (!el) continue;
+          const cs = getComputedStyle(el), fs = parseFloat(cs.fontSize) * 72 / 96, lh = parseFloat(cs.lineHeight) * 72 / 96;
+          if (!el.dataset.r) el.dataset.r = lh / fs;
+          if (fs > min && el.getBoundingClientRect().width > parseFloat(cs.minWidth) * 1.2){ el.style.fontSize = (fs - 0.5) + "pt"; el.style.lineHeight = ((fs - 0.5) * el.dataset.r) + "pt"; changed = true; break; }
+        }
+        if (!changed) break;
+      }
+    });
+    fit();
+  }
+
+  /* the preview is the same sheet, shrunk to the width of its box */
+  function fit(){
+    const box = $("sheetBox"), sc = $("sheetScale");
+    if (window.matchMedia && window.matchMedia("print").matches) return;
+    const w = 595.44 * 96 / 72, avail = box.clientWidth - 24;
+    const k = Math.min(1, avail / w);
+    sc.style.transform = "scale(" + k + ")";
+    sc.style.width = "595.44pt";
+    const h = $("sheet").offsetHeight;
+    box.style.height = (h * k + 24) + "px";
+  }
+
+  Object.keys(F).forEach(k => $(F[k]).addEventListener("input", () => { save(); render(false); }));
+  $("fCount").addEventListener("input", () => render(false));
+  window.addEventListener("resize", fit);
+  $("printBtn").addEventListener("click", () => { render(true); setTimeout(() => window.print(), 80); });
+  window.addEventListener("beforeprint", () => render(true));
+  window.addEventListener("afterprint", () => render(false));
+  render(false);
+})();
+</script>
+</body>
+</html>
