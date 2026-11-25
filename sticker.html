@@ -22,7 +22,7 @@
 .stk .tel{font-size:20pt;line-height:26pt;min-width:26pt}
 .stk .frag{font-size:29.33pt;line-height:59pt;min-width:59pt;color:#f00;white-space:nowrap}
 .stk .from{font-size:15.3pt;line-height:21pt;min-width:21pt;padding:0 3.3pt}
-.stk .tel2{font-size:22pt;line-height:21pt;min-width:21pt}
+.stk .from .sn{display:inline-block;white-space:nowrap;overflow-wrap:normal;direction:ltr;unicode-bidi:isolate;font-family:Calibri,Carlito,Arial,"Liberation Sans",sans-serif;font-size:.72em;margin-block-start:.3em}
 .ph{color:#9aa7b2!important}
 /* ---- form ---- */
 .sgrid{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:20px;align-items:start}
@@ -60,6 +60,9 @@
         <label class="f">اسم شركة المورد / Supplier company<input id="fSComp" autocomplete="off"></label>
         <label class="f">اسم المورد / Supplier name<input id="fSName" autocomplete="off"></label>
         <label class="f">رقم المورد / Supplier number<input id="fSTel" inputmode="tel" autocomplete="off"></label>
+        <h3>النص الأحمر / Red tag</h3>
+        <label class="f">النص / Text<select id="fTag"><option value="frag">قابل للكسر</option><option value="add">الاضافات</option><option value="manual">إدخال يدوي / Manual entry</option></select></label>
+        <label class="f" id="lTagMan" style="display:none">النص اليدوي / Manual text<input id="fTagMan" autocomplete="off"></label>
         <h3>الطباعة / Print</h3>
         <label class="f">عدد الملصقات / Number of stickers (10 per page)<input id="fCount" type="number" min="1" max="500" step="1" value="10" inputmode="numeric"></label>
       </div>
@@ -79,7 +82,7 @@
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
   const KEY = "gqs-sticker";
-  const F = { city:"fCity", comp:"fComp", tel:"fTel", sComp:"fSComp", sName:"fSName", sTel:"fSTel" };
+  const F = { city:"fCity", comp:"fComp", tel:"fTel", sComp:"fSComp", sName:"fSName", sTel:"fSTel", tag:"fTag", tagMan:"fTagMan" };
   /* all boxes start blank; what you type is remembered on this device */
   const DEF = {};
   try { const s = JSON.parse(localStorage.getItem(KEY) || "null"); if (s) Object.keys(F).forEach(k => { if (typeof s[k] === "string") $(F[k]).value = s[k]; }); else Object.keys(DEF).forEach(k => { $(F[k]).value = DEF[k]; }); }
@@ -94,15 +97,17 @@
   function sticker(v, i){
     const x = COLX[i % 2], y = ROWY(Math.floor(i / 2) % 5);
     const t = (k, cls, extra) => `<div class="c ${cls}${extra || ""}${v[k + "_ph"] ? " ph" : ""}">${esc(v[k])}</div>`;
+    /* the number is one unbreakable piece placed right after the name: it stays on the same line if it fits, otherwise the whole number moves to the next line */
+    const num = v.sTel ? ` <span class="sn">${esc(v.sTel)}</span>` : "";
     const sender = v.sComp
-      ? `<div class="c ar from">من : ${esc(v.sComp)}<br>${esc(v.sName)}</div>`
-      : `<div class="c ar from">من : <br>${esc(v.sName)}</div>`;
+      ? `<div class="c ar from">من : ${esc(v.sComp)}<br> ${esc(v.sName)}<br>${num}</div>`
+      : `<div class="c ar from">من : ${esc(v.sName)}<br>${num}</div>`;
+    const tagText = v.tag === "add" ? "الاضافات" : v.tag === "manual" ? v.tagMan : FRAG;
     return `<div class="stk" style="left:${x}mm;top:${y}mm">`
       + BORDER
       + t("city", "ar city") + t("comp", "ar comp") + t("tel", "nm tel")
-      + `<div class="c ar frag"><span>${FRAG}</span></div>`
+      + `<div class="c ar frag"><span>${esc(tagText)}</span></div>`
       + sender
-      + t("sTel", "nm tel2")
       + `</div>`;
   }
 
@@ -129,7 +134,7 @@
     }
     $("sheet").innerHTML = html;
     /* the red "قابل للكسر" line must stay inside the sticker whatever font the device uses for Arabic */
-    $("sheet").querySelectorAll(".frag").forEach(el => { const sp = el.firstChild; let fs = 29.33; while (sp.getBoundingClientRect().height > el.getBoundingClientRect().height * 0.93 && fs > 14){ fs -= 0.5; el.style.fontSize = fs + "pt"; } });
+    $("sheet").querySelectorAll(".frag").forEach(el => { const sp = el.firstChild; let fs = 29.33; while (sp.getBoundingClientRect().height > el.getBoundingClientRect().height * 0.93 && fs > 10){ fs -= 0.5; el.style.fontSize = fs + "pt"; } });
     /* long names wrap into extra lines (extra columns): shrink them until everything stays inside the sticker */
     $("sheet").querySelectorAll(".stk").forEach(st => {
       const order = [[".from", 10], [".comp", 11], [".city", 13]];
@@ -161,7 +166,9 @@
     box.style.height = (h * k + 24) + "px";
   }
 
-  Object.keys(F).forEach(k => $(F[k]).addEventListener("input", () => { save(); render(false); }));
+  const syncTag = () => { $("lTagMan").style.display = $("fTag").value === "manual" ? "" : "none"; };
+  Object.keys(F).forEach(k => { const h = () => { syncTag(); save(); render(false); }; $(F[k]).addEventListener("input", h); $(F[k]).addEventListener("change", h); });
+  syncTag();
   $("fCount").addEventListener("input", () => render(false));
   window.addEventListener("resize", fit);
   $("printBtn").addEventListener("click", () => { render(true); setTimeout(() => window.print(), 80); });
