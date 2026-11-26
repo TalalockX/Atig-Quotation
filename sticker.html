@@ -8,6 +8,7 @@
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="stylesheet" href="style.css">
 <style>
+
 /* ---- the sticker sheet: page 210 x 304.8 mm, 10 label slots of 105 x 57 mm (2 columns x 5 rows); each sticker is 100 x 50 mm, centred in its slot ---- */
 #sheetBox{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;overflow:hidden}
 #sheetScale{transform-origin:top left;width:210mm}
@@ -22,7 +23,7 @@
 .stk .tel{font-size:20pt;line-height:26pt;min-width:26pt}
 .stk .frag{font-size:29.33pt;line-height:59pt;min-width:59pt;color:#f00;white-space:nowrap}
 .stk .from{font-size:15.3pt;line-height:21pt;min-width:21pt;padding:0 3.3pt}
-.stk .from .sn{display:inline-block;white-space:nowrap;overflow-wrap:normal;direction:ltr;unicode-bidi:isolate;font-family:Calibri,Carlito,Arial,"Liberation Sans",sans-serif;font-size:.72em;margin-block-start:.3em}
+.stk .from .sn{display:inline-block;white-space:nowrap;overflow-wrap:normal;direction:ltr;unicode-bidi:isolate;font-family:Calibri,Carlito,Arial,"Liberation Sans",sans-serif;font-size:.9em;margin-block-start:.3em}
 .ph{color:#9aa7b2!important}
 /* ---- form ---- */
 .sgrid{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:20px;align-items:start}
@@ -56,7 +57,7 @@
         <label class="f">المدينة / City<input id="fCity" autocomplete="off"></label>
         <label class="f">الشركة / Company<input id="fComp" autocomplete="off"></label>
         <label class="f">رقم جوال العميل / Customer mobile<input id="fTel" inputmode="tel" autocomplete="off"></label>
-        <h3>المورد / Supplier  (من)</h3>
+        <h3>المورد / Supplier </h3>
         <label class="f">اسم شركة المورد / Supplier company<input id="fSComp" autocomplete="off"></label>
         <label class="f">اسم المورد / Supplier name<input id="fSName" autocomplete="off"></label>
         <label class="f">رقم المورد / Supplier number<input id="fSTel" inputmode="tel" autocomplete="off"></label>
@@ -100,8 +101,8 @@
     /* the number is one unbreakable piece placed right after the name: it stays on the same line if it fits, otherwise the whole number moves to the next line */
     const num = v.sTel ? ` <span class="sn">${esc(v.sTel)}</span>` : "";
     const sender = v.sComp
-      ? `<div class="c ar from">من : ${esc(v.sComp)}<br> ${esc(v.sName)}<br>${num}</div>`
-      : `<div class="c ar from">من : ${esc(v.sName)}<br>${num}</div>`;
+      ? `<div class="c ar from"> ${esc(v.sComp)}<br> ${esc(v.sName)}<br>${num}</div>`
+      : `<div class="c ar from"> ${esc(v.sName)}<br>${num}</div>`;
     const tagText = v.tag === "add" ? "الاضافات" : v.tag === "manual" ? v.tagMan : FRAG;
     return `<div class="stk" style="left:${x}mm;top:${y}mm">`
       + BORDER
