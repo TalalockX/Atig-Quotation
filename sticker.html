@@ -59,7 +59,6 @@
         <label class="f">رقم جوال العميل / Customer mobile<input id="fTel" inputmode="tel" autocomplete="off"></label>
         <h3>المورد / Supplier </h3>
         <label class="f">اسم شركة المورد / Supplier company<input id="fSComp" autocomplete="off"></label>
-        <label class="f">اسم المورد / Supplier name<input id="fSName" autocomplete="off"></label>
         <label class="f">رقم المورد / Supplier number<input id="fSTel" inputmode="tel" autocomplete="off"></label>
         <h3>النص الأحمر / Red tag</h3>
         <label class="f">النص / Text<select id="fTag"><option value="frag">قابل للكسر</option><option value="add">الاضافات</option><option value="manual">إدخال يدوي / Manual entry</option></select></label>
@@ -83,7 +82,7 @@
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
   const KEY = "gqs-sticker";
-  const F = { city:"fCity", comp:"fComp", tel:"fTel", sComp:"fSComp", sName:"fSName", sTel:"fSTel", tag:"fTag", tagMan:"fTagMan" };
+  const F = { city:"fCity", comp:"fComp", tel:"fTel", sComp:"fSComp", sTel:"fSTel", tag:"fTag", tagMan:"fTagMan" };
   /* all boxes start blank; what you type is remembered on this device */
   const DEF = {};
   try { const s = JSON.parse(localStorage.getItem(KEY) || "null"); if (s) Object.keys(F).forEach(k => { if (typeof s[k] === "string") $(F[k]).value = s[k]; }); else Object.keys(DEF).forEach(k => { $(F[k]).value = DEF[k]; }); }
@@ -100,9 +99,7 @@
     const t = (k, cls, extra) => `<div class="c ${cls}${extra || ""}${v[k + "_ph"] ? " ph" : ""}">${esc(v[k])}</div>`;
     /* the number is one unbreakable piece placed right after the name: it stays on the same line if it fits, otherwise the whole number moves to the next line */
     const num = v.sTel ? ` <span class="sn">${esc(v.sTel)}</span>` : "";
-    const sender = v.sComp
-      ? `<div class="c ar from"> ${esc(v.sComp)}<br> ${esc(v.sName)}<br>${num}</div>`
-      : `<div class="c ar from"> ${esc(v.sName)}<br>${num}</div>`;
+    const sender = `<div class="c ar from"> ${esc(v.sComp)}<br>${num}</div>`;
     const tagText = v.tag === "add" ? "الاضافات" : v.tag === "manual" ? v.tagMan : FRAG;
     return `<div class="stk" style="left:${x}mm;top:${y}mm">`
       + BORDER
